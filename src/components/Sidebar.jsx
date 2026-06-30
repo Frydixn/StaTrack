@@ -8,7 +8,6 @@ export default function Sidebar({ activeTab, setActiveTab, playerData }) {
   const navItems = [
     { id: "tracker", label: "Tracker", icon: BarChart2, desc: "Análisis y mejora" },
     { id: "achievements", label: "Logros", icon: Award, desc: "Trayectoria completa" },
-    { id: "compare", label: "Comparar", icon: Users, desc: "Vs. un amigo" },
   ];
 
   return (

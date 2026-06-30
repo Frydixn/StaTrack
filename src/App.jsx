@@ -80,7 +80,7 @@ async function loadOrSyncPlayerProfile(name, tag) {
       puuid: account.puuid, name: account.name,
       tag: account.tag, region, account_level: account.account_level,
     },
-    stats, actStats, mmrHistory: [], achievements,
+    stats, actStats, mmrHistory: [], achievements, matches,
     summary: {
       total: achievements.length, unlocked: unlockedCount,
       percent: Math.round((unlockedCount / achievements.length) * 100),
@@ -157,10 +157,25 @@ export default function App() {
         if (snapshot?.stats) {
           const achievements = evaluateAchievements(snapshot.stats);
           const unlockedCount = achievements.filter((a) => a.unlocked).length;
+          
+          let matches = [];
+          try {
+            const { data: storedMatchesRaw } = await supabase
+              .from("player_matches")
+              .select("match_data")
+              .eq("puuid", player.puuid);
+            if (storedMatchesRaw) {
+              matches = storedMatchesRaw.map((row) => row.match_data) || [];
+            }
+          } catch (e) {
+            console.warn("No se pudieron leer partidas para el snapshot:", e.message);
+          }
+
           setPlayerData({
             account: { puuid: player.puuid, name: player.name, tag: player.tag, region: player.region, account_level: player.account_level },
             stats: snapshot.stats, actStats: snapshot.stats.actStats || null, mmrHistory: [],
             achievements,
+            matches,
             summary: { total: achievements.length, unlocked: unlockedCount, percent: Math.round((unlockedCount / achievements.length) * 100) },
           });
           setLoading(false);
@@ -264,14 +279,25 @@ export default function App() {
               <StatsGrid stats={playerData.stats} />
 
               {activeTab === "tracker" && (
-                <TrackerView playerData={playerData} />
-              )}
-
-              {activeTab === "achievements" && (
                 <>
                   {playerData.stats.agentsByMap && Object.keys(playerData.stats.agentsByMap).length > 0 && (
                     <MapAgentsPanel agentsByMap={playerData.stats.agentsByMap} />
                   )}
+                  <TrackerView playerData={playerData} />
+                </>
+              )}
+
+              {activeTab === "achievements" && (
+                <>
+                  <ComparePanel
+                    playerData={playerData}
+                    friendData={friendData}
+                    friendLoading={friendLoading}
+                    friendError={friendError}
+                    compareMode={compareMode}
+                    onFriendSearch={handleFriendSearch}
+                    onClose={handleCloseCompare}
+                  />
                   <Filters
                     activeFilter={activeFilter}
                     onFilterChange={setActiveFilter}
@@ -283,18 +309,6 @@ export default function App() {
                     friendAchievements={compareMode && friendData ? friendData.achievements : null}
                   />
                 </>
-              )}
-
-              {activeTab === "compare" && (
-                <ComparePanel
-                  playerData={playerData}
-                  friendData={friendData}
-                  friendLoading={friendLoading}
-                  friendError={friendError}
-                  compareMode={compareMode}
-                  onFriendSearch={handleFriendSearch}
-                  onClose={handleCloseCompare}
-                />
               )}
             </div>
           )}

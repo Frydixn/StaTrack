@@ -3,6 +3,7 @@ import InsightCard from "./InsightCard";
 import ActTrendChart from "./ActTrendChart";
 import RankComparisonChart from "./RankComparisonChart";
 import RecommendationsSection from "./RecommendationsSection";
+import MatchHistoryPanel from "./MatchHistoryPanel";
 import { generateTrackerData } from "../services/trackerEngine";
 import { BarChart3 } from "lucide-react";
 
@@ -57,6 +58,8 @@ export default function TrackerView({ playerData }) {
       </div>
 
       <RecommendationsSection recommendations={recommendations} />
+
+      <MatchHistoryPanel matches={playerData.matches} puuid={playerData.account?.puuid} />
     </div>
   );
 }

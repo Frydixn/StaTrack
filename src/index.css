@@ -1789,3 +1789,434 @@ footer {
     padding: 16px;
   }
 }
+
+/* ==========================================
+   ValoQuest Match History Styles
+   ========================================== */
+
+:root {
+  --green: #2ecc71;
+  --green-dim: #1e824c;
+}
+
+.match-history-container {
+  margin-top: 40px;
+  background: var(--bg-panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 24px;
+  box-shadow: 0 4px 15px var(--shadow);
+}
+
+.section-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+}
+
+.match-history-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-dim);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.empty-icon {
+  color: var(--red);
+  opacity: 0.7;
+}
+
+.match-history-days-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.match-history-day-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.match-history-day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 12px 18px;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  user-select: none;
+}
+
+.match-history-day-header:hover {
+  background: rgba(28, 32, 39, 0.95);
+  border-color: var(--line-hover);
+}
+
+.day-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.day-date {
+  font-family: 'Oswald', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.day-count {
+  font-size: 13px;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 8px;
+  border-radius: 2px;
+}
+
+.day-record {
+  font-family: 'Oswald', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.day-header-right {
+  display: flex;
+  gap: 20px;
+}
+
+.day-stat-avg {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.day-stat-avg .lbl {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.day-stat-avg .val {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.match-history-day-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-left: 8px;
+  border-left: 1px dashed var(--line);
+}
+
+.match-history-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 16px 20px;
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.match-history-card:hover {
+  transform: translateX(4px);
+  border-color: var(--line-hover);
+  box-shadow: 0 4px 12px var(--shadow);
+}
+
+/* Result borders and colors */
+.match-win {
+  border-left: 4px solid var(--green);
+}
+.match-loss {
+  border-left: 4px solid var(--red);
+}
+.match-draw {
+  border-left: 4px solid var(--text-dim);
+}
+
+.text-win {
+  color: var(--green) !important;
+}
+.text-loss {
+  color: var(--red) !important;
+}
+.text-draw {
+  color: var(--text-dim) !important;
+}
+
+.card-left-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.agent-avatar-wrap {
+  width: 52px;
+  height: 52px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--line);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.agent-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.agent-avatar-fallback {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.match-info-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.match-mode-time {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.match-mode-time .mode {
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.time-icon {
+  opacity: 0.6;
+}
+
+.match-map {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  text-transform: uppercase;
+}
+
+.map-icon {
+  color: var(--red);
+}
+
+.match-score {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.score-won {
+  color: var(--text);
+}
+
+.score-lost {
+  color: var(--text-dim);
+}
+
+.score-divider {
+  color: var(--line-hover);
+}
+
+.outcome-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 2px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-left: 8px;
+  text-transform: uppercase;
+}
+
+.outcome-badge.match-win {
+  background: rgba(46, 204, 113, 0.15);
+  color: var(--green);
+  border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+.outcome-badge.match-loss {
+  background: rgba(255, 70, 85, 0.15);
+  color: var(--red);
+  border: 1px solid rgba(255, 70, 85, 0.3);
+}
+
+.outcome-badge.match-draw {
+  background: rgba(139, 143, 152, 0.15);
+  color: var(--text-dim);
+  border: 1px solid rgba(139, 143, 152, 0.3);
+}
+
+/* Badges section */
+.card-badges-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  flex: 1;
+  padding: 0 16px;
+}
+
+.match-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.badge-gold {
+  background: rgba(240, 195, 67, 0.1);
+  color: var(--gold);
+  border: 1px solid rgba(240, 195, 67, 0.25);
+}
+
+.badge-cyan {
+  background: rgba(0, 229, 209, 0.1);
+  color: var(--cyan);
+  border: 1px solid rgba(0, 229, 209, 0.25);
+}
+
+.badge-win {
+  background: rgba(46, 204, 113, 0.1);
+  color: var(--green);
+  border: 1px solid rgba(46, 204, 113, 0.25);
+}
+
+.badge-loss {
+  background: rgba(255, 70, 85, 0.1);
+  color: var(--red);
+  border: 1px solid rgba(255, 70, 85, 0.25);
+}
+
+/* Stats right section */
+.card-stats-section {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.stat-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 60px;
+}
+
+.stat-col.rank-info {
+  min-width: 100px;
+  align-items: flex-start;
+}
+
+.stat-col .val {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.stat-col .lbl {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
+.font-oswald {
+  font-family: 'Oswald', sans-serif;
+}
+
+.load-more-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.load-more-btn {
+  font-size: 13px !important;
+  padding: 12px 24px !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 880px) {
+  .match-history-day-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .day-header-right {
+    width: 100%;
+    justify-content: space-between;
+    border-top: 1px solid var(--line);
+    padding-top: 8px;
+  }
+  
+  .match-history-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+  
+  .card-badges-section {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 0;
+  }
+  
+  .card-stats-section {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    border-top: 1px solid var(--line);
+    padding-top: 12px;
+  }
+  
+  .stat-col {
+    align-items: flex-start;
+  }
+  
+  .stat-col.rank-info {
+    grid-column: span 3;
+    border-bottom: 1px dashed var(--line);
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+  }
+}
