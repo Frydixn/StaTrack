@@ -189,6 +189,30 @@ export default function App() {
             }
           }
 
+          if (!snapshot.stats.trend && matches.length > 0) {
+            const trendMatches = matches.slice(0, 15).reverse();
+            const trend = [];
+            let winsCount = 0;
+            trendMatches.forEach((m, idx) => {
+              const me = m.players?.all_players?.find((p) => p.puuid === player.puuid);
+              if (!me) return;
+              const kills = me.stats?.kills || 0;
+              const deaths = me.stats?.deaths || 0;
+              const kd = deaths > 0 ? Number((kills / deaths).toFixed(2)) : Number(kills.toFixed(2));
+              const hsCount = me.stats?.headshots || 0;
+              const totalShots = (me.stats?.headshots || 0) + (me.stats?.bodyshots || 0) + (me.stats?.legshots || 0);
+              const hs = totalShots > 0 ? Math.round((hsCount / totalShots) * 100) : 0;
+              const myTeam = me.team?.toLowerCase();
+              const won = m.teams?.[myTeam]?.has_won ?? false;
+              if (won) winsCount++;
+              const winrate = Math.round((winsCount / (idx + 1)) * 100);
+              const mapName = m.metadata?.map || "Unknown";
+              const label = mapName.substring(0, 3);
+              trend.push({ kd, hs, winrate, label });
+            });
+            snapshot.stats.trend = trend;
+          }
+
           setPlayerData({
             account: { 
               puuid: player.puuid, name: player.name, tag: player.tag, region: player.region, account_level: player.account_level,

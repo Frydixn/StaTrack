@@ -173,6 +173,34 @@ export function aggregateStats(account, mmr, matches) {
     if (count > mostPlayedAgentCount) { mostPlayedAgent = agent; mostPlayedAgentCount = count; }
   }
 
+  // Calculate trend data for the last 15 matches (oldest to newest)
+  const trendMatches = matches.slice(0, 15).reverse();
+  const trend = [];
+  let winsCount = 0;
+  
+  trendMatches.forEach((m, idx) => {
+    const me = m.players?.all_players?.find((p) => p.puuid === account.puuid);
+    if (!me) return;
+    
+    const kills = me.stats?.kills || 0;
+    const deaths = me.stats?.deaths || 0;
+    const kd = deaths > 0 ? Number((kills / deaths).toFixed(2)) : Number(kills.toFixed(2));
+    
+    const hsCount = me.stats?.headshots || 0;
+    const totalShots = (me.stats?.headshots || 0) + (me.stats?.bodyshots || 0) + (me.stats?.legshots || 0);
+    const hs = totalShots > 0 ? Math.round((hsCount / totalShots) * 100) : 0;
+    
+    const myTeam = me.team?.toLowerCase();
+    const won = m.teams?.[myTeam]?.has_won ?? false;
+    if (won) winsCount++;
+    const winrate = Math.round((winsCount / (idx + 1)) * 100);
+    
+    const mapName = m.metadata?.map || "Unknown";
+    const label = mapName.substring(0, 3); // e.g. "Asc", "Bin", "Hav"
+    
+    trend.push({ kd, hs, winrate, label });
+  });
+
   return {
     totalKills: stats.totalKills, totalDeaths: stats.totalDeaths,
     totalAssists: stats.totalAssists, totalDamage: stats.totalDamage,
@@ -192,6 +220,7 @@ export function aggregateStats(account, mmr, matches) {
       highest_rank: mmr.highest_rank || null,
       seasonal: mmr.seasonal || mmr.by_season || null,
     } : null,
+    trend,
   };
 }
 
