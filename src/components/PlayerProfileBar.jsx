@@ -6,7 +6,7 @@ import {
 import { RANK_BENCHMARKS, getRankGroup } from "../services/trackerEngine";
 
 export default function PlayerProfileBar({ 
-  account, stats, latestAct, onRefresh, refreshing, onGoToTracker 
+  account, stats, latestAct, matches, onRefresh, refreshing, onGoToTracker 
 }) {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState("agents");
@@ -38,6 +38,30 @@ export default function PlayerProfileBar({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
+  };
+
+  // Helper to map rank name strings to Valorant tier IDs
+  const getTierIdFromName = (name) => {
+    if (!name) return 0;
+    const clean = name.toLowerCase().trim();
+    if (clean.includes("unranked")) return 0;
+    
+    const ranks = [
+      "iron", "bronze", "silver", "gold", "platinum", 
+      "diamond", "ascendant", "immortal", "radiant"
+    ];
+    
+    let base = 0;
+    for (let i = 0; i < ranks.length; i++) {
+      if (clean.startsWith(ranks[i])) {
+        if (ranks[i] === "radiant") return 27;
+        base = 3 + i * 3;
+        const match = clean.match(/\d/);
+        const num = match ? parseInt(match[0]) : 1;
+        return base + (num - 1);
+      }
+    }
+    return 0;
   };
 
   // 2. Rank calculation helpers
@@ -85,21 +109,35 @@ export default function PlayerProfileBar({
   };
 
   const currentRankName = stats.mmr?.current_data?.currenttierpatched || stats.rankTier || "Unranked";
-  const currentRankTier = stats.mmr?.current_data?.currenttier || 0;
+  const currentRankTier = stats.mmr?.current_data?.currenttier || getTierIdFromName(currentRankName);
   const currentRankIcon = stats.mmr?.current_data?.images?.large || getRankIconUrl(currentRankTier);
-  const currentRR = stats.mmr?.current_data?.ranking_in_tier ?? 0;
-  const currentELO = stats.mmr?.current_data?.elo ?? 0;
+  const currentRR = stats.mmr?.current_data?.ranking_in_tier ?? stats.actStats?.rr ?? 0;
+  const currentELO = stats.mmr?.current_data?.elo ?? stats.actStats?.elo ?? 0;
   
   // Last session RR change
-  const mmrChange = stats.mmr?.current_data?.mmr_change_to_last_game ?? 0;
+  const mmrChange = stats.mmr?.current_data?.mmr_change_to_last_game ?? stats.actStats?.mmrChange ?? 0;
   const rrChangeText = mmrChange > 0 ? `+${mmrChange}` : mmrChange < 0 ? `${mmrChange}` : "0";
   const rrChangeClass = mmrChange > 0 ? "text-win font-oswald" : mmrChange < 0 ? "text-loss font-oswald" : "font-oswald";
 
   const peakRank = getPeakRank(stats.mmr);
+  const peakRankName = peakRank ? peakRank.name : stats.actStats?.peakRankName || "Unranked";
+  const peakRankSeason = peakRank ? peakRank.season : "—";
+  const peakRankTier = peakRank ? peakRank.tierId : getTierIdFromName(stats.actStats?.peakRankName);
+  const peakRankIcon = getRankIconUrl(peakRankTier);
 
   // 3. Performance overview math & benchmark checks
-  const matches = stats.matchesPlayed || 0;
-  const adr = matches > 0 ? Math.round(stats.totalDamage / matches) : 0;
+  const numMatches = stats.matchesPlayed || 0;
+  const rawMatches = matches || [];
+  
+  // Calculate average damage per round (ADR)
+  let totalRoundsPlayed = 0;
+  rawMatches.forEach((m) => {
+    totalRoundsPlayed += m.metadata?.rounds_played || 0;
+  });
+  const adr = totalRoundsPlayed > 0 
+    ? Math.round(stats.totalDamage / totalRoundsPlayed) 
+    : (numMatches > 0 ? Math.round(stats.totalDamage / (numMatches * 20)) : 0);
+
   const kd = stats.kdRatio || 0;
   const hs = stats.headshotPct || 0;
   const winrate = stats.winrate || 0;
@@ -114,9 +152,6 @@ export default function PlayerProfileBar({
 
   // Act / Season tag
   const currentActTag = latestAct?.season?.short || stats.mmr?.current_data?.season_id?.toUpperCase() || "E11A4";
-
-  // 4. Dynamic calculation of Agent and Map statistics from matches
-  const rawMatches = stats.matches || [];
   
   const computedAgents = (() => {
     if (!rawMatches.length) return [];
@@ -283,15 +318,15 @@ export default function PlayerProfileBar({
             <span className="rank-col-lbl">PEAK</span>
             <div className="rank-details">
               <div className="rank-icon-wrap">
-                {peakRank ? (
-                  <img src={getRankIconUrl(peakRank.tierId)} alt={peakRank.name} className="rank-icon-img" />
+                {peakRankIcon ? (
+                  <img src={peakRankIcon} alt={peakRankName} className="rank-icon-img" />
                 ) : (
                   <div className="rank-icon-fallback font-oswald">UR</div>
                 )}
               </div>
               <div className="rank-info">
-                <span className="rank-name font-oswald">{peakRank ? peakRank.name : "Unranked"}</span>
-                <span className="rank-rr font-oswald text-gold">{peakRank ? peakRank.season : "—"}</span>
+                <span className="rank-name font-oswald">{peakRankName}</span>
+                <span className="rank-rr font-oswald text-gold">{peakRankSeason}</span>
               </div>
             </div>
           </div>
@@ -340,7 +375,7 @@ export default function PlayerProfileBar({
             <Map size={12} className="ppb-section-icon" />
             <span>AGENTS & MAPS</span>
           </div>
-          <span className="ppb-games-count font-oswald">{matches} GAMES</span>
+          <span className="ppb-games-count font-oswald">{numMatches} GAMES</span>
         </div>
 
         <div className="ppb-agents-tab-nav">

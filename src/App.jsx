@@ -274,15 +274,12 @@ export default function App() {
                 account={playerData.account}
                 stats={playerData.stats}
                 latestAct={playerData.matches?.[0]?.metadata?.season || { short: playerData.matches?.[0]?.metadata?.season_id || "E11A4" }}
+                matches={playerData.matches}
                 summary={playerData.summary}
                 onRefresh={handleRefresh}
                 refreshing={refreshing}
                 onGoToTracker={() => setActiveTab("tracker")}
               />
-
-              {playerData.actStats && <ActStatsBar actStats={playerData.actStats} />}
-
-              <StatsGrid stats={playerData.stats} />
 
               {activeTab === "tracker" && (
                 <>
