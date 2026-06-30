@@ -1,6 +1,7 @@
 // src/services/statsEngine.js — REEMPLAZA EL ARCHIVO COMPLETO
 
 import axios from "axios";
+import { supabase } from "./supabaseClient";
 
 const HENRIK_BASE = "https://api.henrikdev.xyz";
 const API_KEY = import.meta.env.VITE_HENRIK_API_KEY || "";
@@ -43,7 +44,7 @@ export async function getMatchHistory(region, name, tag, size = 20) {
 export async function getFullMatchHistory(region, name, tag) {
   const allMatches = [];
   let page = 1;
-  const maxPages = 15;
+  const maxPages = 10;
 
   while (page <= maxPages) {
     try {
@@ -200,4 +201,63 @@ export function aggregateStats(account, mmr, matches) {
     rankTier: mmr?.current_data?.currenttierpatched || "Unranked",
     agentsByMap: buildAgentsByMap(matches, account.puuid),
   };
+}
+
+// Sincronización incremental inteligente de partidas
+export async function syncPlayerMatches(region, name, tag, puuid, existingMatchIdsSet) {
+  const newMatches = [];
+  let page = 1;
+  const maxPages = 10; // Hasta 200 partidas
+  let hitExisting = false;
+
+  while (page <= maxPages && !hitExisting) {
+    try {
+      const url = `${HENRIK_BASE}/valorant/v3/matches/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}?size=20&page=${page}&mode=competitive`;
+      const { data } = await axios.get(url, { headers });
+      const batch = data.data || [];
+      if (batch.length === 0) break;
+
+      const compBatch = batch.filter((m) => m.metadata?.mode?.toLowerCase() === "competitive");
+      if (compBatch.length === 0) {
+        page++;
+        continue;
+      }
+
+      for (const match of compBatch) {
+        const matchId = match.metadata?.matchid;
+        if (!matchId) continue;
+
+        if (existingMatchIdsSet.has(matchId)) {
+          hitExisting = true;
+          break;
+        } else {
+          newMatches.push(match);
+        }
+      }
+
+      if (batch.length < 20) break;
+      page++;
+    } catch (err) {
+      console.error("Error al obtener página de partidas:", err.message);
+      break;
+    }
+  }
+
+  if (newMatches.length > 0) {
+    const rowsToInsert = newMatches.map((m) => ({
+      puuid,
+      match_id: m.metadata.matchid,
+      match_data: m,
+    }));
+
+    const { error } = await supabase
+      .from("player_matches")
+      .upsert(rowsToInsert, { onConflict: "puuid,match_id", ignoreDuplicates: true });
+
+    if (error) {
+      console.warn("Error al guardar partidas en Supabase:", error.message);
+    }
+  }
+
+  return newMatches.length;
 }

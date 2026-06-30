@@ -13,42 +13,66 @@ import { supabase } from "./services/supabaseClient";
 import {
   getAccount, getMMR, getMMRHistory,
   getFullMatchHistory, aggregateStats, buildActStats,
+  syncPlayerMatches,
 } from "./services/statsEngine";
 import { evaluateAchievements } from "./services/achievementEvaluator";
 
 // ─── Helper: carga completa desde API ────────────────────────────────────────
 
-async function fetchPlayerFull(name, tag) {
+// ─── Helper: carga completa y sincronización incremental ─────────────────────
+
+async function loadOrSyncPlayerProfile(name, tag) {
   const account = await getAccount(name, tag);
   const region = account.region;
+  const puuid = account.puuid;
 
-  let mmr = null, mmrHistory = [];
+  // 1. Obtener todos los match_ids existentes en Supabase para este puuid
+  const { data: storedMatchIdsRaw } = await supabase
+    .from("player_matches")
+    .select("match_id")
+    .eq("puuid", puuid);
+  const existingMatchIdsSet = new Set(storedMatchIdsRaw?.map((row) => row.match_id) || []);
+
+  // 2. Sincronizar nuevas partidas competitivas de la API a Supabase
+  await syncPlayerMatches(region, name, tag, puuid, existingMatchIdsSet);
+
+  // 3. Recuperar TODAS las partidas competitivas guardadas para este jugador
+  const { data: allStoredMatchesRaw } = await supabase
+    .from("player_matches")
+    .select("match_data")
+    .eq("puuid", puuid);
+  const matches = allStoredMatchesRaw?.map((row) => row.match_data) || [];
+
+  // 4. Cargar MMR
+  let mmr = null;
   try {
-    [mmr, mmrHistory] = await Promise.all([
-      getMMR(region, name, tag),
-      getMMRHistory(region, name, tag),
-    ]);
+    mmr = await getMMR(region, name, tag);
   } catch (e) {
     console.warn("MMR no disponible:", e.message);
   }
 
-  const matches = await getFullMatchHistory(region, name, tag);
+  // 5. Agregar estadísticas y logros a partir de la base de datos
   const stats = aggregateStats(account, mmr, matches);
   const actStats = buildActStats(mmr);
   const achievements = evaluateAchievements(stats);
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
-  return {
+  const result = {
     account: {
       puuid: account.puuid, name: account.name,
       tag: account.tag, region, account_level: account.account_level,
     },
-    stats, actStats, mmrHistory, achievements,
+    stats, actStats, mmrHistory: [], achievements,
     summary: {
       total: achievements.length, unlocked: unlockedCount,
       percent: Math.round((unlockedCount / achievements.length) * 100),
     },
   };
+
+  // 6. Guardar snapshot consolidado en Supabase
+  await saveToSupabase(result);
+
+  return result;
 }
 
 // ─── Helper: guardar en Supabase ──────────────────────────────────────────────
@@ -127,8 +151,7 @@ export default function App() {
         }
       }
 
-      const result = await fetchPlayerFull(name, tag);
-      await saveToSupabase(result);
+      const result = await loadOrSyncPlayerProfile(name, tag);
       setPlayerData(result);
     } catch (err) {
       setError(err.message || "Error al buscar el jugador. Verificá los datos e intentá de nuevo.");
@@ -143,8 +166,7 @@ export default function App() {
     setRefreshing(true);
     setError("");
     try {
-      const result = await fetchPlayerFull(name, tag);
-      await saveToSupabase(result);
+      const result = await loadOrSyncPlayerProfile(name, tag);
       setPlayerData(result);
     } catch (err) {
       setError(err.message || "Error al actualizar los datos.");
@@ -157,7 +179,7 @@ export default function App() {
     setFriendLoading(true);
     setFriendError("");
     try {
-      const result = await fetchPlayerFull(name, tag);
+      const result = await loadOrSyncPlayerProfile(name, tag);
       setFriendData(result);
       setCompareMode(true);
     } catch (err) {
@@ -194,9 +216,9 @@ export default function App() {
         {loading && (
           <div className="state-msg loading-msg">
             <div className="loading-spinner"></div>
-            Escaneando trayectoria competitiva de combate...
+            Sincronizando expediente competitivo de combate...
             <span style={{ fontSize: 13, color: "var(--text-dim)" }}>
-              Esto puede tardar unos segundos — cargamos hasta 100 partidas competitivas
+              Esto puede tardar unos segundos — guardando partidas nuevas en Supabase
             </span>
           </div>
         )}
