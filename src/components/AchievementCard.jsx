@@ -1,5 +1,3 @@
-// src/components/AchievementCard.jsx — REEMPLAZA EL ARCHIVO COMPLETO
-
 import React from "react";
 
 export default function AchievementCard({ achievement, friendAchievement }) {

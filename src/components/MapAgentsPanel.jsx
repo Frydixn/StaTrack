@@ -1,5 +1,3 @@
-// src/components/MapAgentsPanel.jsx — ARCHIVO NUEVO
-
 import React, { useState } from "react";
 import { Map } from "lucide-react";
 

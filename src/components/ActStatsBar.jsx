@@ -1,5 +1,3 @@
-// src/components/ActStatsBar.jsx — ARCHIVO NUEVO
-
 import React from "react";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 

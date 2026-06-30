@@ -1,5 +1,3 @@
-// src/components/ComparePanel.jsx — ARCHIVO NUEVO
-
 import React, { useState } from "react";
 import { Users, X, Search } from "lucide-react";
 

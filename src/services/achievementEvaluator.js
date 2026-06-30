@@ -1,7 +1,5 @@
 import ACHIEVEMENTS from "./achievements.js";
 
-// Compara un valor de stat contra el target de un logro.
-// Maneja tanto números como strings de rango (rankTier).
 const RANK_ORDER = [
   "Iron 1", "Iron 2", "Iron 3",
   "Bronze 1", "Bronze 2", "Bronze 3",
@@ -16,7 +14,6 @@ const RANK_ORDER = [
 
 function rankIndex(rankName) {
   if (!rankName) return -1;
-  // Si el target es solo "Gold" pero el actual es "Gold 2", igual matcheamos por prefijo
   const exact = RANK_ORDER.indexOf(rankName);
   if (exact !== -1) return exact;
   const prefixMatch = RANK_ORDER.findIndex((r) => r.startsWith(rankName));

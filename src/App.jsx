@@ -1,5 +1,3 @@
-// src/App.jsx — REEMPLAZA EL ARCHIVO COMPLETO
-
 import React, { useState } from "react";
 import Header from "./components/Header";
 import ProfileBar from "./components/ProfileBar";
@@ -9,6 +7,8 @@ import MapAgentsPanel from "./components/MapAgentsPanel";
 import Filters from "./components/Filters";
 import AchievementsGrid from "./components/AchievementsGrid";
 import ComparePanel from "./components/ComparePanel";
+import TabNav from "./components/TabNav";
+import TrackerView from "./components/TrackerView";
 import { supabase } from "./services/supabaseClient";
 import {
   getAccount, getMMR, getMMRHistory,
@@ -17,10 +17,6 @@ import {
 } from "./services/statsEngine";
 import { evaluateAchievements } from "./services/achievementEvaluator";
 
-// ─── Helper: carga completa desde API ────────────────────────────────────────
-
-// ─── Helper: carga completa y sincronización incremental ─────────────────────
-
 async function loadOrSyncPlayerProfile(name, tag) {
   const account = await getAccount(name, tag);
   const region = account.region;
@@ -28,7 +24,6 @@ async function loadOrSyncPlayerProfile(name, tag) {
 
   let existingMatchIdsSet = new Set();
   try {
-    // 1. Obtener todos los match_ids existentes en Supabase para este puuid
     const { data: storedMatchIdsRaw, error: dbErr } = await supabase
       .from("player_matches")
       .select("match_id")
@@ -40,14 +35,12 @@ async function loadOrSyncPlayerProfile(name, tag) {
     console.warn("No se pudieron leer match_ids de Supabase (posible tabla inexistente o RLS):", err.message);
   }
 
-  // 2. Sincronizar nuevas partidas competitivas de la API a Supabase
   try {
     await syncPlayerMatches(region, name, tag, puuid, existingMatchIdsSet);
   } catch (err) {
     console.warn("Fallo en sincronización de partidas a Supabase:", err.message);
   }
 
-  // 3. Recuperar TODAS las partidas competitivas guardadas para este jugador
   let matches = [];
   try {
     const { data: allStoredMatchesRaw, error: dbErr } = await supabase
@@ -61,8 +54,6 @@ async function loadOrSyncPlayerProfile(name, tag) {
     console.warn("No se pudieron leer partidas de Supabase:", err.message);
   }
 
-  // Fallback: si por alguna razón la base de datos está vacía o inaccesible (ej: tabla no creada o RLS activa),
-  // cargamos las partidas directamente de la API para que el usuario no vea estadísticas en 0.
   if (matches.length === 0) {
     console.warn("Historial de base de datos vacío o inaccesible. Usando fallback directo de API.");
     try {
@@ -72,7 +63,6 @@ async function loadOrSyncPlayerProfile(name, tag) {
     }
   }
 
-  // 4. Cargar MMR
   let mmr = null;
   try {
     mmr = await getMMR(region, name, tag);
@@ -80,7 +70,6 @@ async function loadOrSyncPlayerProfile(name, tag) {
     console.warn("MMR no disponible:", e.message);
   }
 
-  // 5. Agregar estadísticas y logros
   const stats = aggregateStats(account, mmr, matches);
   const actStats = buildActStats(mmr);
   const achievements = evaluateAchievements(stats);
@@ -98,7 +87,6 @@ async function loadOrSyncPlayerProfile(name, tag) {
     },
   };
 
-  // 6. Guardar snapshot consolidado en Supabase
   try {
     await saveToSupabase(result);
   } catch (dbErr) {
@@ -107,8 +95,6 @@ async function loadOrSyncPlayerProfile(name, tag) {
 
   return result;
 }
-
-// ─── Helper: guardar en Supabase ──────────────────────────────────────────────
 
 async function saveToSupabase(playerData) {
   const { account, stats, achievements } = playerData;
@@ -132,8 +118,6 @@ async function saveToSupabase(playerData) {
   }
 }
 
-// ─── Componente principal ─────────────────────────────────────────────────────
-
 export default function App() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -142,11 +126,11 @@ export default function App() {
   const [activeFilter, setActiveFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Comparación
   const [compareMode, setCompareMode] = useState(false);
   const [friendData, setFriendData] = useState(null);
   const [friendLoading, setFriendLoading] = useState(false);
   const [friendError, setFriendError] = useState("");
+  const [activeTab, setActiveTab] = useState("achievements");
 
   const handleSearch = async (name, tag) => {
     setLoading(true);
@@ -156,9 +140,9 @@ export default function App() {
     setCompareMode(false);
     setActiveFilter("all");
     setSearchTerm("");
+    setActiveTab("achievements");
 
     try {
-      // Intentar Supabase primero
       const { data: player } = await supabase
         .from("players").select("*")
         .ilike("name", name).ilike("tag", tag).maybeSingle();
@@ -290,17 +274,24 @@ export default function App() {
               onClose={handleCloseCompare}
             />
 
-            <Filters
-              activeFilter={activeFilter}
-              onFilterChange={setActiveFilter}
-              searchTerm={searchTerm}
-              onSearchTermChange={setSearchTerm}
-            />
+            <TabNav activeTab={activeTab} setActiveTab={setActiveTab} />
 
-            <AchievementsGrid
-              achievements={filteredAchievements}
-              friendAchievements={compareMode && friendData ? friendData.achievements : null}
-            />
+            {activeTab === "achievements" ? (
+              <>
+                <Filters
+                  activeFilter={activeFilter}
+                  onFilterChange={setActiveFilter}
+                  searchTerm={searchTerm}
+                  onSearchTermChange={setSearchTerm}
+                />
+                <AchievementsGrid
+                  achievements={filteredAchievements}
+                  friendAchievements={compareMode && friendData ? friendData.achievements : null}
+                />
+              </>
+            ) : (
+              <TrackerView playerData={playerData} />
+            )}
           </div>
         )}
       </main>

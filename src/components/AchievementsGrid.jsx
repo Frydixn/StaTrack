@@ -1,5 +1,3 @@
-// src/components/AchievementsGrid.jsx — REEMPLAZA EL ARCHIVO COMPLETO
-
 import React from "react";
 import AchievementCard from "./AchievementCard";
 

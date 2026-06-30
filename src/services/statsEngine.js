@@ -1,13 +1,9 @@
-// src/services/statsEngine.js — REEMPLAZA EL ARCHIVO COMPLETO
-
 import axios from "axios";
 import { supabase } from "./supabaseClient";
 
 const HENRIK_BASE = "https://api.henrikdev.xyz";
 const API_KEY = import.meta.env.VITE_HENRIK_API_KEY || "";
 const headers = API_KEY ? { Authorization: API_KEY } : {};
-
-// ─── Helpers API ──────────────────────────────────────────────────────────────
 
 export async function getAccount(name, tag) {
   const url = `${HENRIK_BASE}/valorant/v1/account/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`;
@@ -21,7 +17,6 @@ export async function getMMR(region, name, tag) {
   return data.data;
 }
 
-// Historial de MMR por acto (endpoint v1)
 export async function getMMRHistory(region, name, tag) {
   try {
     const url = `${HENRIK_BASE}/valorant/v1/mmr-history/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`;
@@ -32,7 +27,6 @@ export async function getMMRHistory(region, name, tag) {
   }
 }
 
-// Trae las últimas `size` partidas competitivas
 export async function getMatchHistory(region, name, tag, size = 20) {
   const url = `${HENRIK_BASE}/valorant/v3/matches/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}?size=${size}&mode=competitive`;
   const { data } = await axios.get(url, { headers });
@@ -40,7 +34,6 @@ export async function getMatchHistory(region, name, tag, size = 20) {
   return rawMatches.filter((m) => m.metadata?.mode?.toLowerCase() === "competitive");
 }
 
-// Trayectoria completa: pagina hasta 5 páginas de 20 partidas (100 partidas competitivas en total)
 export async function getFullMatchHistory(region, name, tag) {
   const allMatches = [];
   let page = 1;
@@ -63,8 +56,6 @@ export async function getFullMatchHistory(region, name, tag) {
   return allMatches.filter((m) => m.metadata?.mode?.toLowerCase() === "competitive");
 }
 
-// ─── Stats del último acto ────────────────────────────────────────────────────
-
 export function buildActStats(mmr) {
   if (!mmr) return null;
   const current = mmr.current_data;
@@ -81,20 +72,17 @@ export function buildActStats(mmr) {
   };
 }
 
-// ─── Top 3 agentes por mapa ───────────────────────────────────────────────────
-
 export function buildAgentsByMap(matches, puuid) {
   if (!matches || matches.length === 0) return {};
 
-  // Determinar el último acto de la partida más reciente
   const firstMatchMeta = matches[0]?.metadata;
   const latestSeason = firstMatchMeta?.season_id || firstMatchMeta?.season?.id || firstMatchMeta?.season?.short;
 
   const targetMatches = latestSeason
     ? matches.filter((m) => {
-      const mSeason = m.metadata?.season_id || m.metadata?.season?.id || m.metadata?.season?.short;
-      return mSeason === latestSeason;
-    })
+        const mSeason = m.metadata?.season_id || m.metadata?.season?.id || m.metadata?.season?.short;
+        return mSeason === latestSeason;
+      })
     : matches;
 
   const data = {};
@@ -131,8 +119,6 @@ export function buildAgentsByMap(matches, puuid) {
 
   return result;
 }
-
-// ─── Agregado de stats (trayectoria completa) ─────────────────────────────────
 
 export function aggregateStats(account, mmr, matches) {
   const stats = {
@@ -187,6 +173,47 @@ export function aggregateStats(account, mmr, matches) {
     if (count > mostPlayedAgentCount) { mostPlayedAgent = agent; mostPlayedAgentCount = count; }
   }
 
+  const sortedMatches = [...matches].sort((a, b) => {
+    const timeA = new Date(a.metadata?.game_start_patched || a.metadata?.game_start || 0);
+    const timeB = new Date(b.metadata?.game_start_patched || b.metadata?.game_start || 0);
+    return timeA - timeB;
+  });
+
+  const recentMatches = sortedMatches.slice(-15);
+  let rollingKills = 0;
+  let rollingDeaths = 0;
+  let rollingWins = 0;
+
+  const trend = recentMatches.map((m, idx) => {
+    const players = m.players?.all_players || [];
+    const me = players.find((p) => p.puuid === account.puuid);
+    const myTeam = me?.team?.toLowerCase();
+    const won = m.teams?.[myTeam]?.has_won ?? false;
+
+    const kills = me?.stats?.kills || 0;
+    const deaths = me?.stats?.deaths || 0;
+    const hs = me?.stats?.headshots || 0;
+    const body = me?.stats?.bodyshots || 0;
+    const leg = me?.stats?.legshots || 0;
+    const totalShots = hs + body + leg;
+    const hsPct = totalShots > 0 ? Math.round((hs / totalShots) * 100) : 0;
+
+    rollingKills += kills;
+    rollingDeaths += deaths;
+    if (won) rollingWins += 1;
+
+    const gamesPlayed = idx + 1;
+    const rollingKd = rollingDeaths > 0 ? Number((rollingKills / rollingDeaths).toFixed(2)) : kills;
+    const rollingWr = Math.round((rollingWins / gamesPlayed) * 100);
+
+    return {
+      label: `P${gamesPlayed}`,
+      kd: rollingKd,
+      hs: hsPct,
+      winrate: rollingWr,
+    };
+  });
+
   return {
     totalKills: stats.totalKills, totalDeaths: stats.totalDeaths,
     totalAssists: stats.totalAssists, totalDamage: stats.totalDamage,
@@ -200,14 +227,14 @@ export function aggregateStats(account, mmr, matches) {
     accountLevel: account.account_level || 0,
     rankTier: mmr?.current_data?.currenttierpatched || "Unranked",
     agentsByMap: buildAgentsByMap(matches, account.puuid),
+    trend,
   };
 }
 
-// Sincronización incremental inteligente de partidas
 export async function syncPlayerMatches(region, name, tag, puuid, existingMatchIdsSet) {
   const newMatches = [];
   let page = 1;
-  const maxPages = 10; // Hasta 200 partidas
+  const maxPages = 10;
   let hitExisting = false;
 
   while (page <= maxPages && !hitExisting) {
@@ -238,7 +265,7 @@ export async function syncPlayerMatches(region, name, tag, puuid, existingMatchI
       if (batch.length < 20) break;
       page++;
     } catch (err) {
-      console.error("Error al obtener página de partidas:", err.message);
+      console.error(err.message);
       break;
     }
   }
@@ -255,7 +282,7 @@ export async function syncPlayerMatches(region, name, tag, puuid, existingMatchI
       .upsert(rowsToInsert, { onConflict: "puuid,match_id", ignoreDuplicates: true });
 
     if (error) {
-      console.warn("Error al guardar partidas en Supabase:", error.message);
+      console.warn(error.message);
     }
   }
 
