@@ -1,212 +1,203 @@
+// src/App.jsx — REEMPLAZA EL ARCHIVO COMPLETO
+
 import React, { useState } from "react";
 import Header from "./components/Header";
 import ProfileBar from "./components/ProfileBar";
+import ActStatsBar from "./components/ActStatsBar";
 import StatsGrid from "./components/StatsGrid";
+import MapAgentsPanel from "./components/MapAgentsPanel";
 import Filters from "./components/Filters";
 import AchievementsGrid from "./components/AchievementsGrid";
+import ComparePanel from "./components/ComparePanel";
 import { supabase } from "./services/supabaseClient";
-import { getAccount, getMMR, getMatchHistory, aggregateStats } from "./services/statsEngine";
+import {
+  getAccount, getMMR, getMMRHistory,
+  getFullMatchHistory, aggregateStats, buildActStats,
+} from "./services/statsEngine";
 import { evaluateAchievements } from "./services/achievementEvaluator";
+
+// ─── Helper: carga completa desde API ────────────────────────────────────────
+
+async function fetchPlayerFull(name, tag) {
+  const account = await getAccount(name, tag);
+  const region = account.region;
+
+  let mmr = null, mmrHistory = [];
+  try {
+    [mmr, mmrHistory] = await Promise.all([
+      getMMR(region, name, tag),
+      getMMRHistory(region, name, tag),
+    ]);
+  } catch (e) {
+    console.warn("MMR no disponible:", e.message);
+  }
+
+  const matches = await getFullMatchHistory(region, name, tag);
+  const stats = aggregateStats(account, mmr, matches);
+  const actStats = buildActStats(mmr);
+  const achievements = evaluateAchievements(stats);
+  const unlockedCount = achievements.filter((a) => a.unlocked).length;
+
+  return {
+    account: {
+      puuid: account.puuid, name: account.name,
+      tag: account.tag, region, account_level: account.account_level,
+    },
+    stats, actStats, mmrHistory, achievements,
+    summary: {
+      total: achievements.length, unlocked: unlockedCount,
+      percent: Math.round((unlockedCount / achievements.length) * 100),
+    },
+  };
+}
+
+// ─── Helper: guardar en Supabase ──────────────────────────────────────────────
+
+async function saveToSupabase(playerData) {
+  const { account, stats, achievements } = playerData;
+  try {
+    await supabase.from("players").upsert({
+      puuid: account.puuid, name: account.name, tag: account.tag,
+      region: account.region, account_level: account.account_level,
+      last_updated: new Date().toISOString(),
+    });
+    await supabase.from("player_stats_snapshots").insert({ puuid: account.puuid, stats });
+
+    const unlockedRows = achievements
+      .filter((a) => a.unlocked)
+      .map((a) => ({ puuid: account.puuid, achievement_id: a.id }));
+    if (unlockedRows.length > 0) {
+      await supabase.from("player_achievements")
+        .upsert(unlockedRows, { onConflict: "puuid,achievement_id", ignoreDuplicates: true });
+    }
+  } catch (dbErr) {
+    console.warn("Error guardando en Supabase:", dbErr.message);
+  }
+}
+
+// ─── Componente principal ─────────────────────────────────────────────────────
 
 export default function App() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [playerData, setPlayerData] = useState(null);
-  
-  // Filtros de logros
   const [activeFilter, setActiveFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Comparación
+  const [compareMode, setCompareMode] = useState(false);
+  const [friendData, setFriendData] = useState(null);
+  const [friendLoading, setFriendLoading] = useState(false);
+  const [friendError, setFriendError] = useState("");
 
   const handleSearch = async (name, tag) => {
     setLoading(true);
     setError("");
     setPlayerData(null);
+    setFriendData(null);
+    setCompareMode(false);
     setActiveFilter("all");
     setSearchTerm("");
 
     try {
-      // 1. Buscar jugador en Supabase (case-insensitive para nombre y tag)
-      const { data: player, error: playerError } = await supabase
-        .from("players")
-        .select("*")
-        .ilike("name", name)
-        .ilike("tag", tag)
-        .maybeSingle();
-
-      if (playerError) {
-        console.error("Error buscando jugador en Supabase:", playerError);
-      }
+      // Intentar Supabase primero
+      const { data: player } = await supabase
+        .from("players").select("*")
+        .ilike("name", name).ilike("tag", tag).maybeSingle();
 
       if (player) {
-        // 2. Jugador encontrado: traer estadísticas (último snapshot)
-        const { data: snapshot, error: snapError } = await supabase
-          .from("player_stats_snapshots")
-          .select("stats")
+        const { data: snapshot } = await supabase
+          .from("player_stats_snapshots").select("stats")
           .eq("puuid", player.puuid)
           .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          .limit(1).maybeSingle();
 
-        if (snapError) {
-          console.error("Error buscando snapshot en Supabase:", snapError);
-        }
-
-        if (snapshot && snapshot.stats) {
-          // Evaluar logros localmente con las estadísticas persistidas
+        if (snapshot?.stats) {
           const achievements = evaluateAchievements(snapshot.stats);
           const unlockedCount = achievements.filter((a) => a.unlocked).length;
-
           setPlayerData({
-            account: {
-              puuid: player.puuid,
-              name: player.name,
-              tag: player.tag,
-              region: player.region,
-              account_level: player.account_level,
-            },
-            stats: snapshot.stats,
+            account: { puuid: player.puuid, name: player.name, tag: player.tag, region: player.region, account_level: player.account_level },
+            stats: snapshot.stats, actStats: snapshot.stats.actStats || null, mmrHistory: [],
             achievements,
-            summary: {
-              total: achievements.length,
-              unlocked: unlockedCount,
-              percent: Math.round((unlockedCount / achievements.length) * 100),
-            },
+            summary: { total: achievements.length, unlocked: unlockedCount, percent: Math.round((unlockedCount / achievements.length) * 100) },
           });
           setLoading(false);
           return;
         }
       }
 
-      // 3. No encontrado o sin snapshot: consultar API y guardar
-      await fetchAndSaveFromApi(name, tag);
+      const result = await fetchPlayerFull(name, tag);
+      await saveToSupabase(result);
+      setPlayerData(result);
     } catch (err) {
-      console.error(err);
-      setError(
-        err.message || "Error al buscar el jugador. Verificá los datos e intentá de nuevo."
-      );
+      setError(err.message || "Error al buscar el jugador. Verificá los datos e intentá de nuevo.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleRefresh = async () => {
-    if (!playerData || !playerData.account) return;
+    if (!playerData?.account) return;
     const { name, tag } = playerData.account;
-    
     setRefreshing(true);
     setError("");
-
     try {
-      await fetchAndSaveFromApi(name, tag);
+      const result = await fetchPlayerFull(name, tag);
+      await saveToSupabase(result);
+      setPlayerData(result);
     } catch (err) {
-      console.error(err);
-      setError(
-        err.message || "Error al actualizar los datos de la API de Valorant."
-      );
+      setError(err.message || "Error al actualizar los datos.");
     } finally {
       setRefreshing(false);
     }
   };
 
-  const fetchAndSaveFromApi = async (name, tag) => {
-    // A. Consultar la API de HenrikDev
-    const account = await getAccount(name, tag);
-    const region = account.region;
-
-    let mmr = null;
+  const handleFriendSearch = async (name, tag) => {
+    setFriendLoading(true);
+    setFriendError("");
     try {
-      mmr = await getMMR(region, name, tag);
-    } catch (e) {
-      console.warn("No se pudo obtener el MMR:", e.message);
+      const result = await fetchPlayerFull(name, tag);
+      setFriendData(result);
+      setCompareMode(true);
+    } catch (err) {
+      setFriendError(err.message || "No se pudo cargar el perfil del amigo.");
+    } finally {
+      setFriendLoading(false);
     }
-
-    const matches = await getMatchHistory(region, name, tag, 20);
-
-    // B. Procesar estadísticas y evaluar logros
-    const stats = aggregateStats(account, mmr, matches);
-    const achievements = evaluateAchievements(stats);
-    const unlockedCount = achievements.filter((a) => a.unlocked).length;
-
-    const formattedData = {
-      account: {
-        puuid: account.puuid,
-        name: account.name,
-        tag: account.tag,
-        region,
-        account_level: account.account_level,
-      },
-      stats,
-      achievements,
-      summary: {
-        total: achievements.length,
-        unlocked: unlockedCount,
-        percent: Math.round((unlockedCount / achievements.length) * 100),
-      },
-    };
-
-    // C. Guardar en Supabase (best-effort, si falla igual mostramos los datos al usuario)
-    try {
-      await supabase.from("players").upsert({
-        puuid: account.puuid,
-        name: account.name,
-        tag: account.tag,
-        region,
-        account_level: account.account_level,
-        last_updated: new Date().toISOString(),
-      });
-
-      await supabase.from("player_stats_snapshots").insert({
-        puuid: account.puuid,
-        stats,
-      });
-
-      const unlockedRows = achievements
-        .filter((a) => a.unlocked)
-        .map((a) => ({ puuid: account.puuid, achievement_id: a.id }));
-
-      if (unlockedRows.length > 0) {
-        await supabase
-          .from("player_achievements")
-          .upsert(unlockedRows, { onConflict: "puuid,achievement_id", ignoreDuplicates: true });
-      }
-    } catch (dbErr) {
-      console.warn("Error guardando datos en Supabase:", dbErr.message);
-    }
-
-    setPlayerData(formattedData);
   };
 
-  // Filtrado de logros para renderizar
+  const handleCloseCompare = () => {
+    setCompareMode(false);
+    setFriendData(null);
+    setFriendError("");
+  };
+
   const filteredAchievements = playerData
     ? playerData.achievements.filter((ach) => {
-        // Filtro por tipo (unlocked/locked/all)
-        if (activeFilter === "unlocked" && !ach.unlocked) return false;
-        if (activeFilter === "locked" && ach.unlocked) return false;
-
-        // Filtro de búsqueda por texto (nombre o descripción)
-        if (searchTerm.trim()) {
-          const term = searchTerm.toLowerCase();
-          const matchesName = ach.name.toLowerCase().includes(term);
-          const matchesDesc = ach.desc.toLowerCase().includes(term);
-          return matchesName || matchesDesc;
-        }
-
-        return true;
-      })
+      if (activeFilter === "unlocked" && !ach.unlocked) return false;
+      if (activeFilter === "locked" && ach.unlocked) return false;
+      if (searchTerm.trim()) {
+        const term = searchTerm.toLowerCase();
+        return ach.name.toLowerCase().includes(term) || ach.desc.toLowerCase().includes(term);
+      }
+      return true;
+    })
     : [];
 
   return (
     <div className="app-container">
       <div className="noise-bar"></div>
-      
       <Header onSearch={handleSearch} loading={loading} />
 
       <main>
         {loading && (
           <div className="state-msg loading-msg">
             <div className="loading-spinner"></div>
-            Escaneando historial de combate...
+            Escaneando trayectoria completa de combate...
+            <span style={{ fontSize: 13, color: "var(--text-dim)" }}>
+              Esto puede tardar unos segundos — cargamos hasta 100 partidas
+            </span>
           </div>
         )}
 
@@ -226,7 +217,23 @@ export default function App() {
               refreshing={refreshing}
             />
 
+            {playerData.actStats && <ActStatsBar actStats={playerData.actStats} />}
+
             <StatsGrid stats={playerData.stats} />
+
+            {playerData.stats.agentsByMap && Object.keys(playerData.stats.agentsByMap).length > 0 && (
+              <MapAgentsPanel agentsByMap={playerData.stats.agentsByMap} />
+            )}
+
+            <ComparePanel
+              playerData={playerData}
+              friendData={friendData}
+              friendLoading={friendLoading}
+              friendError={friendError}
+              compareMode={compareMode}
+              onFriendSearch={handleFriendSearch}
+              onClose={handleCloseCompare}
+            />
 
             <Filters
               activeFilter={activeFilter}
@@ -235,7 +242,10 @@ export default function App() {
               onSearchTermChange={setSearchTerm}
             />
 
-            <AchievementsGrid achievements={filteredAchievements} />
+            <AchievementsGrid
+              achievements={filteredAchievements}
+              friendAchievements={compareMode && friendData ? friendData.achievements : null}
+            />
           </div>
         )}
       </main>
