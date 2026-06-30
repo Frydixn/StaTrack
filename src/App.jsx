@@ -194,9 +194,9 @@ export default function App() {
         {loading && (
           <div className="state-msg loading-msg">
             <div className="loading-spinner"></div>
-            Escaneando trayectoria completa de combate...
+            Escaneando trayectoria competitiva de combate...
             <span style={{ fontSize: 13, color: "var(--text-dim)" }}>
-              Esto puede tardar unos segundos — cargamos hasta 100 partidas
+              Esto puede tardar unos segundos — cargamos hasta 100 partidas competitivas
             </span>
           </div>
         )}

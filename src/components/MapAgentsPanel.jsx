@@ -30,7 +30,7 @@ export default function MapAgentsPanel({ agentsByMap }) {
             <div className="section-header">
                 <Map size={16} className="section-icon" />
                 <span>Top 3 Agentes por Mapa</span>
-                <span className="section-sub">Basado en tu trayectoria completa</span>
+                <span className="section-sub">Basado en el último acto jugado</span>
             </div>
             <div className="map-tabs">
                 {maps.map((map) => (

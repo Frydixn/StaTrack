@@ -31,14 +31,15 @@ export async function getMMRHistory(region, name, tag) {
   }
 }
 
-// Trae las últimas `size` partidas
+// Trae las últimas `size` partidas competitivas
 export async function getMatchHistory(region, name, tag, size = 20) {
-  const url = `${HENRIK_BASE}/valorant/v3/matches/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}?size=${size}`;
+  const url = `${HENRIK_BASE}/valorant/v3/matches/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}?size=${size}&mode=competitive`;
   const { data } = await axios.get(url, { headers });
-  return data.data || [];
+  const rawMatches = data.data || [];
+  return rawMatches.filter((m) => m.metadata?.mode?.toLowerCase() === "competitive");
 }
 
-// Trayectoria completa: pagina hasta 5 páginas de 20 partidas (100 total)
+// Trayectoria completa: pagina hasta 5 páginas de 20 partidas (100 partidas competitivas en total)
 export async function getFullMatchHistory(region, name, tag) {
   const allMatches = [];
   let page = 1;
@@ -46,7 +47,7 @@ export async function getFullMatchHistory(region, name, tag) {
 
   while (page <= maxPages) {
     try {
-      const url = `${HENRIK_BASE}/valorant/v3/matches/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}?size=20&page=${page}`;
+      const url = `${HENRIK_BASE}/valorant/v3/matches/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}?size=20&page=${page}&mode=competitive`;
       const { data } = await axios.get(url, { headers });
       const batch = data.data || [];
       if (batch.length === 0) break;
@@ -58,7 +59,7 @@ export async function getFullMatchHistory(region, name, tag) {
     }
   }
 
-  return allMatches;
+  return allMatches.filter((m) => m.metadata?.mode?.toLowerCase() === "competitive");
 }
 
 // ─── Stats del último acto ────────────────────────────────────────────────────
@@ -82,9 +83,22 @@ export function buildActStats(mmr) {
 // ─── Top 3 agentes por mapa ───────────────────────────────────────────────────
 
 export function buildAgentsByMap(matches, puuid) {
+  if (!matches || matches.length === 0) return {};
+
+  // Determinar el último acto de la partida más reciente
+  const firstMatchMeta = matches[0]?.metadata;
+  const latestSeason = firstMatchMeta?.season_id || firstMatchMeta?.season?.id || firstMatchMeta?.season?.short;
+
+  const targetMatches = latestSeason
+    ? matches.filter((m) => {
+        const mSeason = m.metadata?.season_id || m.metadata?.season?.id || m.metadata?.season?.short;
+        return mSeason === latestSeason;
+      })
+    : matches;
+
   const data = {};
 
-  for (const match of matches) {
+  for (const match of targetMatches) {
     const players = match.players?.all_players || [];
     const me = players.find((p) => p.puuid === puuid);
     if (!me) continue;
