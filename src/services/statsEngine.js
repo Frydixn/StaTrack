@@ -80,9 +80,9 @@ export function buildAgentsByMap(matches, puuid) {
 
   const targetMatches = latestSeason
     ? matches.filter((m) => {
-        const mSeason = m.metadata?.season_id || m.metadata?.season?.id || m.metadata?.season?.short;
-        return mSeason === latestSeason;
-      })
+      const mSeason = m.metadata?.season_id || m.metadata?.season?.id || m.metadata?.season?.short;
+      return mSeason === latestSeason;
+    })
     : matches;
 
   const data = {};
@@ -173,47 +173,6 @@ export function aggregateStats(account, mmr, matches) {
     if (count > mostPlayedAgentCount) { mostPlayedAgent = agent; mostPlayedAgentCount = count; }
   }
 
-  const sortedMatches = [...matches].sort((a, b) => {
-    const timeA = new Date(a.metadata?.game_start_patched || a.metadata?.game_start || 0);
-    const timeB = new Date(b.metadata?.game_start_patched || b.metadata?.game_start || 0);
-    return timeA - timeB;
-  });
-
-  const recentMatches = sortedMatches.slice(-15);
-  let rollingKills = 0;
-  let rollingDeaths = 0;
-  let rollingWins = 0;
-
-  const trend = recentMatches.map((m, idx) => {
-    const players = m.players?.all_players || [];
-    const me = players.find((p) => p.puuid === account.puuid);
-    const myTeam = me?.team?.toLowerCase();
-    const won = m.teams?.[myTeam]?.has_won ?? false;
-
-    const kills = me?.stats?.kills || 0;
-    const deaths = me?.stats?.deaths || 0;
-    const hs = me?.stats?.headshots || 0;
-    const body = me?.stats?.bodyshots || 0;
-    const leg = me?.stats?.legshots || 0;
-    const totalShots = hs + body + leg;
-    const hsPct = totalShots > 0 ? Math.round((hs / totalShots) * 100) : 0;
-
-    rollingKills += kills;
-    rollingDeaths += deaths;
-    if (won) rollingWins += 1;
-
-    const gamesPlayed = idx + 1;
-    const rollingKd = rollingDeaths > 0 ? Number((rollingKills / rollingDeaths).toFixed(2)) : kills;
-    const rollingWr = Math.round((rollingWins / gamesPlayed) * 100);
-
-    return {
-      label: `P${gamesPlayed}`,
-      kd: rollingKd,
-      hs: hsPct,
-      winrate: rollingWr,
-    };
-  });
-
   return {
     totalKills: stats.totalKills, totalDeaths: stats.totalDeaths,
     totalAssists: stats.totalAssists, totalDamage: stats.totalDamage,
@@ -227,7 +186,6 @@ export function aggregateStats(account, mmr, matches) {
     accountLevel: account.account_level || 0,
     rankTier: mmr?.current_data?.currenttierpatched || "Unranked",
     agentsByMap: buildAgentsByMap(matches, account.puuid),
-    trend,
   };
 }
 
@@ -265,7 +223,7 @@ export async function syncPlayerMatches(region, name, tag, puuid, existingMatchI
       if (batch.length < 20) break;
       page++;
     } catch (err) {
-      console.error(err.message);
+      console.error("Error al obtener página de partidas:", err.message);
       break;
     }
   }
@@ -282,7 +240,7 @@ export async function syncPlayerMatches(region, name, tag, puuid, existingMatchI
       .upsert(rowsToInsert, { onConflict: "puuid,match_id", ignoreDuplicates: true });
 
     if (error) {
-      console.warn(error.message);
+      console.warn("Error al guardar partidas en Supabase:", error.message);
     }
   }
 
