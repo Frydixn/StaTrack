@@ -224,7 +224,7 @@ export async function syncPlayerMatches(region, name, tag, puuid, existingMatchI
       }
 
       for (const match of compBatch) {
-        const matchId = match.metadata?.matchid;
+        const matchId = match.metadata?.matchid || match.metadata?.match_id;
         if (!matchId) continue;
 
         if (existingMatchIdsSet.has(matchId)) {
@@ -246,7 +246,7 @@ export async function syncPlayerMatches(region, name, tag, puuid, existingMatchI
   if (newMatches.length > 0) {
     const rowsToInsert = newMatches.map((m) => ({
       puuid,
-      match_id: m.metadata.matchid,
+      match_id: m.metadata?.matchid || m.metadata?.match_id,
       match_data: m,
     }));
 

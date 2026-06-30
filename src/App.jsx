@@ -26,22 +26,51 @@ async function loadOrSyncPlayerProfile(name, tag) {
   const region = account.region;
   const puuid = account.puuid;
 
-  // 1. Obtener todos los match_ids existentes en Supabase para este puuid
-  const { data: storedMatchIdsRaw } = await supabase
-    .from("player_matches")
-    .select("match_id")
-    .eq("puuid", puuid);
-  const existingMatchIdsSet = new Set(storedMatchIdsRaw?.map((row) => row.match_id) || []);
+  let existingMatchIdsSet = new Set();
+  try {
+    // 1. Obtener todos los match_ids existentes en Supabase para este puuid
+    const { data: storedMatchIdsRaw, error: dbErr } = await supabase
+      .from("player_matches")
+      .select("match_id")
+      .eq("puuid", puuid);
+    if (!dbErr && storedMatchIdsRaw) {
+      existingMatchIdsSet = new Set(storedMatchIdsRaw.map((row) => row.match_id));
+    }
+  } catch (err) {
+    console.warn("No se pudieron leer match_ids de Supabase (posible tabla inexistente o RLS):", err.message);
+  }
 
   // 2. Sincronizar nuevas partidas competitivas de la API a Supabase
-  await syncPlayerMatches(region, name, tag, puuid, existingMatchIdsSet);
+  try {
+    await syncPlayerMatches(region, name, tag, puuid, existingMatchIdsSet);
+  } catch (err) {
+    console.warn("Fallo en sincronización de partidas a Supabase:", err.message);
+  }
 
   // 3. Recuperar TODAS las partidas competitivas guardadas para este jugador
-  const { data: allStoredMatchesRaw } = await supabase
-    .from("player_matches")
-    .select("match_data")
-    .eq("puuid", puuid);
-  const matches = allStoredMatchesRaw?.map((row) => row.match_data) || [];
+  let matches = [];
+  try {
+    const { data: allStoredMatchesRaw, error: dbErr } = await supabase
+      .from("player_matches")
+      .select("match_data")
+      .eq("puuid", puuid);
+    if (!dbErr && allStoredMatchesRaw) {
+      matches = allStoredMatchesRaw.map((row) => row.match_data) || [];
+    }
+  } catch (err) {
+    console.warn("No se pudieron leer partidas de Supabase:", err.message);
+  }
+
+  // Fallback: si por alguna razón la base de datos está vacía o inaccesible (ej: tabla no creada o RLS activa),
+  // cargamos las partidas directamente de la API para que el usuario no vea estadísticas en 0.
+  if (matches.length === 0) {
+    console.warn("Historial de base de datos vacío o inaccesible. Usando fallback directo de API.");
+    try {
+      matches = await getFullMatchHistory(region, name, tag);
+    } catch (err) {
+      console.error("Fallo al obtener historial de fallback de API:", err.message);
+    }
+  }
 
   // 4. Cargar MMR
   let mmr = null;
@@ -51,7 +80,7 @@ async function loadOrSyncPlayerProfile(name, tag) {
     console.warn("MMR no disponible:", e.message);
   }
 
-  // 5. Agregar estadísticas y logros a partir de la base de datos
+  // 5. Agregar estadísticas y logros
   const stats = aggregateStats(account, mmr, matches);
   const actStats = buildActStats(mmr);
   const achievements = evaluateAchievements(stats);
@@ -70,7 +99,11 @@ async function loadOrSyncPlayerProfile(name, tag) {
   };
 
   // 6. Guardar snapshot consolidado en Supabase
-  await saveToSupabase(result);
+  try {
+    await saveToSupabase(result);
+  } catch (dbErr) {
+    console.warn("No se pudo guardar el snapshot en Supabase:", dbErr.message);
+  }
 
   return result;
 }
