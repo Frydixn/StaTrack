@@ -15,7 +15,7 @@ export default function Sidebar({ activeTab, setActiveTab, playerData }) {
       <div className="sidebar-brand">
         <Crosshair className="sidebar-brand-icon" size={20} />
         <span className="sidebar-brand-text">
-          VALOR<span className="brand-red">QUEST</span>
+          VALO<span className="brand-red">QUEST</span>
         </span>
       </div>
 
