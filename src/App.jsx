@@ -7,7 +7,7 @@ import MapAgentsPanel from "./components/MapAgentsPanel";
 import Filters from "./components/Filters";
 import AchievementsGrid from "./components/AchievementsGrid";
 import ComparePanel from "./components/ComparePanel";
-import TabNav from "./components/TabNav";
+import Sidebar from "./components/Sidebar";
 import TrackerView from "./components/TrackerView";
 import { supabase } from "./services/supabaseClient";
 import {
@@ -130,7 +130,7 @@ export default function App() {
   const [friendData, setFriendData] = useState(null);
   const [friendLoading, setFriendLoading] = useState(false);
   const [friendError, setFriendError] = useState("");
-  const [activeTab, setActiveTab] = useState("achievements");
+  const [activeTab, setActiveTab] = useState("tracker");
 
   const handleSearch = async (name, tag) => {
     setLoading(true);
@@ -140,7 +140,7 @@ export default function App() {
     setCompareMode(false);
     setActiveFilter("all");
     setSearchTerm("");
-    setActiveTab("achievements");
+    setActiveTab("tracker");
 
     try {
       const { data: player } = await supabase
@@ -225,80 +225,85 @@ export default function App() {
     : [];
 
   return (
-    <div className="app-container">
-      <div className="noise-bar"></div>
-      <Header onSearch={handleSearch} loading={loading} />
+    <div className="app-shell">
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} playerData={playerData} />
+      
+      <div className="app-main">
+        <div className="noise-bar"></div>
+        <Header onSearch={handleSearch} loading={loading} />
 
-      <main>
-        {loading && (
-          <div className="state-msg loading-msg">
-            <div className="loading-spinner"></div>
-            Sincronizando expediente competitivo de combate...
-            <span style={{ fontSize: 13, color: "var(--text-dim)" }}>
-              Esto puede tardar unos segundos — guardando partidas nuevas en Supabase
-            </span>
-          </div>
-        )}
+        <main>
+          {loading && (
+            <div className="state-msg loading-msg">
+              <div className="loading-spinner"></div>
+              Sincronizando expediente competitivo de combate...
+              <span style={{ fontSize: 13, color: "var(--text-dim)" }}>
+                Esto puede tardar unos segundos — guardando partidas nuevas en Supabase
+              </span>
+            </div>
+          )}
 
-        {error && <div className="state-msg error">{error}</div>}
+          {error && <div className="state-msg error">{error}</div>}
 
-        {!loading && !error && !playerData && (
-          <div className="state-msg">Esperando un Riot ID para empezar a escanear...</div>
-        )}
+          {!loading && !error && !playerData && (
+            <div className="state-msg">Esperando un Riot ID para empezar a escanear...</div>
+          )}
 
-        {!loading && playerData && (
-          <div className="results-container">
-            <ProfileBar
-              account={playerData.account}
-              summary={playerData.summary}
-              rank={playerData.stats.rankTier}
-              onRefresh={handleRefresh}
-              refreshing={refreshing}
-            />
+          {!loading && playerData && (
+            <div className="results-container">
+              <ProfileBar
+                account={playerData.account}
+                summary={playerData.summary}
+                rank={playerData.stats.rankTier}
+                onRefresh={handleRefresh}
+                refreshing={refreshing}
+              />
 
-            {playerData.actStats && <ActStatsBar actStats={playerData.actStats} />}
+              {playerData.actStats && <ActStatsBar actStats={playerData.actStats} />}
 
-            <StatsGrid stats={playerData.stats} />
+              <StatsGrid stats={playerData.stats} />
 
-            {playerData.stats.agentsByMap && Object.keys(playerData.stats.agentsByMap).length > 0 && (
-              <MapAgentsPanel agentsByMap={playerData.stats.agentsByMap} />
-            )}
+              {activeTab === "tracker" && (
+                <TrackerView playerData={playerData} />
+              )}
 
-            <ComparePanel
-              playerData={playerData}
-              friendData={friendData}
-              friendLoading={friendLoading}
-              friendError={friendError}
-              compareMode={compareMode}
-              onFriendSearch={handleFriendSearch}
-              onClose={handleCloseCompare}
-            />
+              {activeTab === "achievements" && (
+                <>
+                  {playerData.stats.agentsByMap && Object.keys(playerData.stats.agentsByMap).length > 0 && (
+                    <MapAgentsPanel agentsByMap={playerData.stats.agentsByMap} />
+                  )}
+                  <Filters
+                    activeFilter={activeFilter}
+                    onFilterChange={setActiveFilter}
+                    searchTerm={searchTerm}
+                    onSearchTermChange={setSearchTerm}
+                  />
+                  <AchievementsGrid
+                    achievements={filteredAchievements}
+                    friendAchievements={compareMode && friendData ? friendData.achievements : null}
+                  />
+                </>
+              )}
 
-            <TabNav activeTab={activeTab} setActiveTab={setActiveTab} />
-
-            {activeTab === "achievements" ? (
-              <>
-                <Filters
-                  activeFilter={activeFilter}
-                  onFilterChange={setActiveFilter}
-                  searchTerm={searchTerm}
-                  onSearchTermChange={setSearchTerm}
+              {activeTab === "compare" && (
+                <ComparePanel
+                  playerData={playerData}
+                  friendData={friendData}
+                  friendLoading={friendLoading}
+                  friendError={friendError}
+                  compareMode={compareMode}
+                  onFriendSearch={handleFriendSearch}
+                  onClose={handleCloseCompare}
                 />
-                <AchievementsGrid
-                  achievements={filteredAchievements}
-                  friendAchievements={compareMode && friendData ? friendData.achievements : null}
-                />
-              </>
-            ) : (
-              <TrackerView playerData={playerData} />
-            )}
-          </div>
-        )}
-      </main>
+              )}
+            </div>
+          )}
+        </main>
 
-      <footer>
-        Proyecto independiente, no afiliado a Riot Games. Valorant es marca registrada de Riot Games, Inc.
-      </footer>
+        <footer>
+          Proyecto independiente, no afiliado a Riot Games. Valorant es marca registrada de Riot Games, Inc.
+        </footer>
+      </div>
     </div>
   );
 }
