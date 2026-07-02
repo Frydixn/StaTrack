@@ -635,10 +635,42 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                             <span className="val">
                               {(() => {
                                 let kastRounds = 0;
-                                rounds.forEach((r) => {
+                                rounds.forEach((r, rIdx) => {
                                   const ps = r.player_stats?.find((x) => x.player_puuid === activePlayer.puuid);
                                   if (!ps) return;
-                                  if ((ps.kills || 0) > 0 || (ps.assists || 0) > 0 || !ps.was_killed) {
+                                  
+                                  const roundKills = ps.kills || 0;
+                                  const roundDeaths = (match.kills || []).some(k => k.round === rIdx && k.victim_puuid === activePlayer.puuid) ? 1 : 0;
+                                  const roundAssists = (match.kills || []).filter(k => {
+                                    if (k.round !== rIdx) return false;
+                                    const assistants = k.assistants || k.assistant_puuids || [];
+                                    return assistants.some(ast => {
+                                      if (typeof ast === "string") return ast === activePlayer.puuid;
+                                      if (ast && typeof ast === "object") return (ast.assistant_puuid === activePlayer.puuid) || (ast.puuid === activePlayer.puuid);
+                                      return false;
+                                    });
+                                  }).length;
+
+                                  const survived = roundDeaths === 0;
+                                  const gotKill = roundKills > 0;
+                                  const gotAssist = roundAssists > 0;
+                                  
+                                  // Trade check: if the player died, was their killer killed in the same round by a teammate?
+                                  let traded = false;
+                                  if (roundDeaths > 0) {
+                                    const myDeath = (match.kills || []).find(k => k.round === rIdx && k.victim_puuid === activePlayer.puuid);
+                                    if (myDeath) {
+                                      const killerPuuid = myDeath.killer_puuid;
+                                      traded = (match.kills || []).some(k => 
+                                        k.round === rIdx && 
+                                        k.victim_puuid === killerPuuid && 
+                                        k.killer_puuid !== activePlayer.puuid && 
+                                        allPlayers.find(p => p.puuid === k.killer_puuid)?.team?.toLowerCase() === activePlayer.team?.toLowerCase()
+                                      );
+                                    }
+                                  }
+
+                                  if (gotKill || gotAssist || survived || traded) {
                                     kastRounds++;
                                   }
                                 });
