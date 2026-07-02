@@ -68,6 +68,34 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
     return `https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/${tierId}/largeicon.png`;
   };
 
+  // Group players into parties
+  const partyCounts = {};
+  allPlayers.forEach((p) => {
+    if (p.party_id) {
+      partyCounts[p.party_id] = (partyCounts[p.party_id] || 0) + 1;
+    }
+  });
+
+  const partyColors = [
+    "#3b82f6", // Royal Blue
+    "#f97316", // Bright Orange
+    "#10b981", // Emerald Green
+    "#a855f7", // Purple
+    "#eab308", // Yellow
+    "#ec4899", // Pink
+    "#06b6d4", // Cyan
+    "#f43f5e", // Crimson Red
+  ];
+
+  const multiParties = Object.entries(partyCounts)
+    .filter(([_, count]) => count > 1)
+    .map(([partyId]) => partyId);
+
+  const partyColorMap = {};
+  multiParties.forEach((partyId, idx) => {
+    partyColorMap[partyId] = partyColors[idx % partyColors.length];
+  });
+
   // Group players by teams and sort by Combat Score descending
   const redPlayers = allPlayers
     .filter((p) => p.team?.toLowerCase() === "red")
@@ -202,18 +230,29 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                         const isMe = p.puuid === puuid;
                         const tierId = p.currenttier ?? p.current_tier ?? p.tier ?? 0;
                         const rankIcon = getRankIconUrl(tierId);
+                        const partyColor = p.party_id ? partyColorMap[p.party_id] : null;
+                        const partyIdx = p.party_id ? multiParties.indexOf(p.party_id) : -1;
 
                         return (
                           <tr key={idx} className={isMe ? "mdo-row-highlight" : ""}>
                             <td className="mdo-player-cell">
-                              <div className="mdo-agent-icon-circle">
-                                {iconUrl ? (
-                                  <img src={iconUrl} alt={p.character} className="mdo-agent-icon-img" />
-                                ) : (
-                                  <div className="mdo-agent-fallback font-oswald">
-                                    {p.character?.substring(0, 2).toUpperCase()}
-                                  </div>
+                              <div className="mdo-player-avatar-wrap">
+                                {partyColor && (
+                                  <div 
+                                    className="mdo-party-indicator" 
+                                    style={{ backgroundColor: partyColor }} 
+                                    title={`Grupo ${partyIdx + 1}`}
+                                  />
                                 )}
+                                <div className="mdo-agent-icon-square" style={{ borderRadius: partyColor ? "0 4px 4px 0" : "4px" }}>
+                                  {iconUrl ? (
+                                    <img src={iconUrl} alt={p.character} className="mdo-agent-icon-img" />
+                                  ) : (
+                                    <div className="mdo-agent-fallback font-oswald">
+                                      {p.character?.substring(0, 2).toUpperCase()}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                               <div className="mdo-player-name-wrap">
                                 <span className="mdo-player-name font-oswald">{p.name}</span>
@@ -283,18 +322,29 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                         const isMe = p.puuid === puuid;
                         const tierId = p.currenttier ?? p.current_tier ?? p.tier ?? 0;
                         const rankIcon = getRankIconUrl(tierId);
+                        const partyColor = p.party_id ? partyColorMap[p.party_id] : null;
+                        const partyIdx = p.party_id ? multiParties.indexOf(p.party_id) : -1;
 
                         return (
                           <tr key={idx} className={isMe ? "mdo-row-highlight" : ""}>
                             <td className="mdo-player-cell">
-                              <div className="mdo-agent-icon-circle">
-                                {iconUrl ? (
-                                  <img src={iconUrl} alt={p.character} className="mdo-agent-icon-img" />
-                                ) : (
-                                  <div className="mdo-agent-fallback font-oswald">
-                                    {p.character?.substring(0, 2).toUpperCase()}
-                                  </div>
+                              <div className="mdo-player-avatar-wrap">
+                                {partyColor && (
+                                  <div 
+                                    className="mdo-party-indicator" 
+                                    style={{ backgroundColor: partyColor }} 
+                                    title={`Grupo ${partyIdx + 1}`}
+                                  />
                                 )}
+                                <div className="mdo-agent-icon-square" style={{ borderRadius: partyColor ? "0 4px 4px 0" : "4px" }}>
+                                  {iconUrl ? (
+                                    <img src={iconUrl} alt={p.character} className="mdo-agent-icon-img" />
+                                  ) : (
+                                    <div className="mdo-agent-fallback font-oswald">
+                                      {p.character?.substring(0, 2).toUpperCase()}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                               <div className="mdo-player-name-wrap">
                                 <span className="mdo-player-name font-oswald">{p.name}</span>

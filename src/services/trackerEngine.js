@@ -101,7 +101,7 @@ export function generateTrackerData(playerData) {
     insights.push({
       type: "weakness",
       title: "Pool de Agentes Muy Amplio",
-      desc: `Has jugado con ${stats.uniqueAgents} agentes distintos. Reducir tu pool a 2 o 3 te ayudará a perfeccionar mecánicas y subir más rápido.`,
+      desc: `Has jugado con ${stats.uniqueAgents} agentes distintos. A pesar de ser flexible en la selección no olvides mantener el nivel con tus agentes principales.`,
       metric: "Agentes",
       value: stats.uniqueAgents,
     });
