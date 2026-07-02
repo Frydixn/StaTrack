@@ -2746,3 +2746,361 @@ footer {
     padding-left: 12px;
   }
 }
+
+/* ==========================================
+   ValoQuest Match Detail Overlay Styles
+   ========================================== */
+
+.match-detail-overlay-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: flex-end;
+  z-index: 1000;
+  animation: fadeInOverlay 0.2s ease-out;
+}
+
+@keyframes fadeInOverlay {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.match-detail-overlay-drawer {
+  width: 55%;
+  height: 100%;
+  background: var(--bg-panel);
+  border-left: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.6);
+  animation: slideInDrawer 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-y: auto;
+  padding: 24px;
+}
+
+@keyframes slideInDrawer {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+/* 1. HEADER STYLES */
+.mdo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+
+.mdo-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mdo-header-left .title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text);
+}
+
+.mdo-id-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-dim);
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px dashed rgba(255, 255, 255, 0.05);
+  transition: all 0.2s;
+}
+
+.mdo-id-wrap:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--line-hover);
+  color: var(--text);
+}
+
+.mdo-close-btn {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--line);
+  color: var(--text-dim);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mdo-close-btn:hover {
+  background: rgba(255, 70, 85, 0.1);
+  color: var(--red);
+  border-color: var(--red);
+}
+
+/* 2. BANNER STYLES */
+.mdo-banner {
+  position: relative;
+  height: 120px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  margin-bottom: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  padding: 16px;
+}
+
+.mdo-banner-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+}
+
+.mdo-banner-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to top, rgba(15, 25, 35, 0.95) 20%, rgba(15, 25, 35, 0.4) 100%);
+}
+
+.mdo-banner-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mdo-banner-map-title {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+}
+
+.mdo-banner-sub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.mdo-banner-sub .bullet {
+  font-size: 12px;
+  color: var(--line);
+}
+
+.mdo-banner-sub .mode {
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.mdo-banner-sub .outcome-text {
+  font-weight: 700;
+}
+
+.mdo-banner-sub .score {
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* 3. METADATA GRID STYLES */
+.mdo-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-shrink: 0;
+}
+
+.mdo-meta-grid .meta-cell {
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.mdo-meta-grid .meta-cell .lbl {
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.mdo-meta-grid .meta-cell .val {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* 4. SCOREBOARD SECTIONS */
+.mdo-scoreboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.mdo-team-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mdo-team-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.team-red .mdo-team-header {
+  background: rgba(255, 70, 85, 0.15);
+  border: 1px solid rgba(255, 70, 85, 0.25);
+  color: var(--red);
+}
+
+.team-blue .mdo-team-header {
+  background: rgba(0, 180, 200, 0.15);
+  border: 1px solid rgba(0, 180, 200, 0.25);
+  color: var(--cyan);
+}
+
+.mdo-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.mdo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.mdo-table th {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-dim);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.2);
+  text-align: left;
+}
+
+.mdo-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.mdo-table tbody tr.row-highlight td {
+  background: rgba(255, 255, 255, 0.03);
+  font-weight: 600;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+.mdo-player-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 160px;
+}
+
+.mdo-player-cell .agent-icon-wrap {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.mdo-player-cell .agent-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mdo-player-cell .agent-icon-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.mdo-player-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.mdo-player-info .name {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.mdo-player-info .tag {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.mdo-rank-icon-wrap {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mdo-rank-icon-wrap .rank-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Responsive adjustments for Drawer */
+@media (max-width: 1200px) {
+  .match-detail-overlay-drawer {
+    width: 75%;
+  }
+}
+
+@media (max-width: 880px) {
+  .match-detail-overlay-drawer {
+    width: 100%;
+    padding: 16px;
+  }
+  
+  .mdo-meta-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
