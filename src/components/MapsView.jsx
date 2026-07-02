@@ -26,12 +26,20 @@ export default function MapsView() {
   }, [selectedMap]);
 
   useEffect(() => {
+    const isCompetitiveMap = (map) => {
+      const url = map.mapUrl || "";
+      // Exclude Range (Pangea) and TDM/Skirmish (HURM) maps
+      if (url.includes("/HURM/") || url.includes("/Pangea/")) return false;
+      // Must have minimap displayIcon and callouts to be competitive
+      return !!map.displayIcon && map.callouts && map.callouts.length > 0;
+    };
+
     fetch("https://valorant-api.com/v1/maps")
       .then((res) => res.json())
       .then((resJson) => {
         if (resJson.data) {
           const validMaps = resJson.data.filter(
-            (map) => map.displayName && map.listViewIcon
+            (map) => map.displayName && map.listViewIcon && isCompetitiveMap(map)
           );
           setMaps(validMaps);
         }
@@ -76,8 +84,8 @@ export default function MapsView() {
 
     // Auto-detect spawn side to orient map from attacker's perspective (attacker spawn at the bottom)
     const attackerCallout = calloutsList.find(c => 
-      c.regionName?.toLowerCase().includes("attacker") || 
-      c.superRegionName?.toLowerCase().includes("attacker")
+      c.regionName?.toLowerCase().includes("attack") || 
+      c.superRegionName?.toLowerCase().includes("attack")
     );
 
     let mapRotation = 0;
@@ -86,21 +94,19 @@ export default function MapsView() {
       const dx = pct.x - 50;
       const dy = pct.y - 50;
       
-      if (Math.abs(dy) > Math.abs(dx)) {
-        if (dy < -10) {
-          // Attacker spawn is at the top, rotate 180deg to make it bottom
-          mapRotation = 180;
-        }
-      } else {
-        if (dx < -10) {
-          // Attacker spawn is on the left, rotate 90deg to make it bottom
-          mapRotation = 90;
-        } else if (dx > 10) {
-          // Attacker spawn is on the right, rotate 270deg to make it bottom
-          mapRotation = 270;
-        }
-      }
+      const angleRad = Math.atan2(dy, dx);
+      let angleDeg = angleRad * (180 / Math.PI);
+      if (angleDeg < 0) angleDeg += 360;
+      
+      // We want to bring the spawn to the bottom (90 degrees)
+      let targetRotation = 90 - angleDeg;
+      if (targetRotation < 0) targetRotation += 360;
+      
+      // Round to nearest 90 degrees increment (0, 90, 180, 270)
+      mapRotation = Math.round(targetRotation / 90) * 90;
+      if (mapRotation >= 360) mapRotation -= 360;
     }
+
 
     return (
       <div className="maps-view-container">
