@@ -5,12 +5,11 @@ import {
 } from "lucide-react";
 import MatchDetailOverlay from "./MatchDetailOverlay";
 
-export default function MatchHistoryPanel({ matches, puuid, latestMmrChange }) {
+export default function MatchHistoryPanel({ matches, puuid }) {
   const [agentIcons, setAgentIcons] = useState({});
   const [expandedDays, setExpandedDays] = useState({});
   const [visibleDaysCount, setVisibleDaysCount] = useState(3);
   const [selectedMatch, setSelectedMatch] = useState(null);
-  const latestMatchId = matches && matches.length > 0 ? (matches[0].metadata?.matchid || matches[0].metadata?.match_id) : null;
 
   // Dynamic fetch of playable agent icons from Valorant-API to keep assets up-to-date
   useEffect(() => {
@@ -301,8 +300,8 @@ export default function MatchHistoryPanel({ matches, puuid, latestMmrChange }) {
                     return (
                       <div 
                         key={matchId} 
-                        className={`match-history-card ${outcomeClass}`} 
-                        onClick={() => setSelectedMatch(match)} 
+                        className={`match-history-card ${outcomeClass}`}
+                        onClick={() => setSelectedMatch(match)}
                         style={{ cursor: "pointer" }}
                       >
                         <div className="card-left-section">
@@ -404,13 +403,12 @@ export default function MatchHistoryPanel({ matches, puuid, latestMmrChange }) {
           </button>
         </div>
       )}
+
       {selectedMatch && (
         <MatchDetailOverlay 
-          match={selectedMatch}
-          puuid={puuid}
-          latestMatchId={latestMatchId}
-          latestMmrChange={latestMmrChange}
-          onClose={() => setSelectedMatch(null)}
+          match={selectedMatch} 
+          puuid={puuid} 
+          onClose={() => setSelectedMatch(null)} 
         />
       )}
     </div>

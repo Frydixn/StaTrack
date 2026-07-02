@@ -59,11 +59,7 @@ export default function TrackerView({ playerData }) {
 
       <RecommendationsSection recommendations={recommendations} />
 
-      <MatchHistoryPanel 
-        matches={playerData.matches} 
-        puuid={playerData.account?.puuid} 
-        latestMmrChange={playerData.stats.mmr?.current_data?.mmr_change_to_last_game ?? playerData.stats.actStats?.mmrChange}
-      />
+      <MatchHistoryPanel matches={playerData.matches} puuid={playerData.account?.puuid} />
     </div>
   );
 }
