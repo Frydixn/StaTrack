@@ -1130,37 +1130,61 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
 
                               {/* Killer & Victim Coordinates Markers */}
                               {roundKills.map((k, idx) => {
+                                const killerLocObj = k.player_locations?.find(pl => pl.player_puuid === k.killer_puuid);
+                                const victimLocObj = k.player_locations?.find(pl => pl.player_puuid === k.victim_puuid);
+                                
+                                const killerAngle = killerLocObj?.view_radiant || killerLocObj?.view_radians || 0;
+                                const victimAngle = victimLocObj?.view_radiant || victimLocObj?.view_radians || 0;
+
                                 const killerLoc = k.killer_location;
                                 const victimLoc = k.victim_death_location;
                                 
                                 const killerPct = isValidLoc(killerLoc) ? convertCoords(killerLoc.x, killerLoc.y) : null;
                                 const victimPct = isValidLoc(victimLoc) ? convertCoords(victimLoc.x, victimLoc.y) : null;
 
-                                const killerTeam = allPlayers.find(p => p.puuid === k.killer_puuid)?.team?.toLowerCase() || "blue";
-                                const victimTeam = allPlayers.find(p => p.puuid === k.victim_puuid)?.team?.toLowerCase() || "red";
+                                const killerPlayer = allPlayers.find(p => p.puuid === k.killer_puuid);
+                                const victimPlayer = allPlayers.find(p => p.puuid === k.victim_puuid);
 
-                                const killerIcon = agentIcons[k.killer_character?.toLowerCase()];
-                                const victimIcon = agentIcons[k.victim_character?.toLowerCase()];
+                                const killerCharacter = killerPlayer?.character || "";
+                                const victimCharacter = victimPlayer?.character || "";
+
+                                const killerTeam = killerPlayer?.team?.toLowerCase() || "blue";
+                                const victimTeam = victimPlayer?.team?.toLowerCase() || "red";
+
+                                const killerIcon = agentIcons[killerCharacter.toLowerCase()];
+                                const victimIcon = agentIcons[victimCharacter.toLowerCase()];
 
                                 return (
                                   <React.Fragment key={idx}>
-                                    {killerPct && (
+                                    {killerPct && killerIcon && (
                                       <div 
                                         className={`mdo-minimap-marker killer ${killerTeam}`}
                                         style={{ left: `${killerPct.x}%`, top: `${killerPct.y}%` }}
-                                        title={`${k.killer_display_name} (${k.killer_character})`}
+                                        title={`${killerPlayer?.name || k.killer_display_name} (${killerCharacter})`}
                                       >
-                                        {killerIcon ? <img src={killerIcon} alt={k.killer_character} /> : <span>K</span>}
+                                        <img src={killerIcon} alt={killerCharacter} />
+                                        {killerLocObj && (
+                                          <div 
+                                            className="player-direction-pointer" 
+                                            style={{ transform: `rotate(${killerAngle}rad)` }}
+                                          />
+                                        )}
                                       </div>
                                     )}
-                                    {victimPct && (
+                                    {victimPct && victimIcon && (
                                       <div 
                                         className={`mdo-minimap-marker victim ${victimTeam}`}
                                         style={{ left: `${victimPct.x}%`, top: `${victimPct.y}%` }}
-                                        title={`${k.victim_display_name} (${k.victim_character})`}
+                                        title={`${victimPlayer?.name || k.victim_display_name} (${victimCharacter})`}
                                       >
-                                        {victimIcon ? <img src={victimIcon} alt={k.victim_character} /> : <span>V</span>}
+                                        <img src={victimIcon} alt={victimCharacter} />
                                         <div className="victim-cross">❌</div>
+                                        {victimLocObj && (
+                                          <div 
+                                            className="player-direction-pointer" 
+                                            style={{ transform: `rotate(${victimAngle}rad)` }}
+                                          />
+                                        )}
                                       </div>
                                     )}
                                   </React.Fragment>
@@ -1220,25 +1244,29 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                               
                               if (ev.type === "kill") {
                                 const k = ev.data;
-                                const killerIcon = agentIcons[k.killer_character?.toLowerCase()];
-                                const victimIcon = agentIcons[k.victim_character?.toLowerCase()];
-                                const killerTeam = allPlayers.find(p => p.puuid === k.killer_puuid)?.team?.toLowerCase() || "blue";
-                                const victimTeam = allPlayers.find(p => p.puuid === k.victim_puuid)?.team?.toLowerCase() || "red";
+                                const killerPlayer = allPlayers.find(p => p.puuid === k.killer_puuid);
+                                const victimPlayer = allPlayers.find(p => p.puuid === k.victim_puuid);
+                                const killerCharacter = killerPlayer?.character || "";
+                                const victimCharacter = victimPlayer?.character || "";
+                                const killerIcon = agentIcons[killerCharacter.toLowerCase()];
+                                const victimIcon = agentIcons[victimCharacter.toLowerCase()];
+                                const killerTeam = killerPlayer?.team?.toLowerCase() || "blue";
+                                const victimTeam = victimPlayer?.team?.toLowerCase() || "red";
                                 
                                 return (
                                   <div key={evIdx} className="mdo-feed-event-item kill">
                                     <span className="event-time font-oswald">{timeStr}</span>
                                     <div className="event-details">
                                       <div className={`event-actor killer ${killerTeam}`}>
-                                        {killerIcon && <img src={killerIcon} alt={k.killer_character} className="agent-icon" />}
-                                        <span className="font-oswald">{k.killer_display_name}</span>
+                                        {killerIcon && <img src={killerIcon} alt={killerCharacter} className="agent-icon" />}
+                                        <span className="font-oswald">{killerPlayer?.name || k.killer_display_name}</span>
                                       </div>
                                       <span className="event-verb text-dim font-oswald">
                                         [{k.weapon_name?.toUpperCase() || "ELIMINÓ"}]
                                       </span>
                                       <div className={`event-actor victim ${victimTeam}`}>
-                                        {victimIcon && <img src={victimIcon} alt={k.victim_character} className="agent-icon" />}
-                                        <span className="font-oswald">{k.victim_display_name}</span>
+                                        {victimIcon && <img src={victimIcon} alt={victimCharacter} className="agent-icon" />}
+                                        <span className="font-oswald">{victimPlayer?.name || k.victim_display_name}</span>
                                       </div>
                                     </div>
                                   </div>
@@ -1247,8 +1275,10 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
 
                               if (ev.type === "plant") {
                                 const p = ev.data;
-                                const planterName = p.planted_by?.display_name || p.planted_by || "Atacante";
-                                const planterCharacter = p.planted_by?.character || "";
+                                const planterPuuid = p.planted_by?.puuid || p.planted_by;
+                                const planterPlayer = allPlayers.find(x => x.puuid === planterPuuid);
+                                const planterName = planterPlayer?.name || p.planted_by?.display_name || "Atacante";
+                                const planterCharacter = planterPlayer?.character || "";
                                 const planterIcon = agentIcons[planterCharacter.toLowerCase()];
 
                                 return (
@@ -1267,8 +1297,10 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
 
                               if (ev.type === "defuse") {
                                 const d = ev.data;
-                                const defuserName = d.defused_by?.display_name || d.defused_by || "Defensor";
-                                const defuserCharacter = d.defused_by?.character || "";
+                                const defuserPuuid = d.defused_by?.puuid || d.defused_by;
+                                const defuserPlayer = allPlayers.find(x => x.puuid === defuserPuuid);
+                                const defuserName = defuserPlayer?.name || d.defused_by?.display_name || "Defensor";
+                                const defuserCharacter = defuserPlayer?.character || "";
                                 const defuserIcon = agentIcons[defuserCharacter.toLowerCase()];
 
                                 return (
