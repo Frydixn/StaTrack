@@ -29,21 +29,27 @@ async function checkMatch() {
   }
 
   const match = data.match_data;
-  console.log("Match Metadata:", JSON.stringify(match.metadata, null, 2));
-  
-  const players = match.players?.all_players || [];
-  if (players.length > 0) {
-    console.log("Player 1 schema keys:", Object.keys(players[0]));
-    console.log("Player 1 rank info:", {
-      name: players[0].name,
-      current_tier: players[0].current_tier,
-      tier: players[0].tier,
-      rank: players[0].rank,
-      current_tier_patched: players[0].current_tier_patched
-    });
-  } else {
-    console.log("No players in match.");
-  }
+  const rounds = match.rounds || [];
+  const fs = require("fs");
+  const path = require("path");
+
+  const output = {
+    metadata: match.metadata,
+    round_keys: rounds.length > 0 ? Object.keys(rounds[0]) : [],
+    player_stats_keys: (rounds.length > 0 && rounds[0].player_stats?.length > 0) 
+      ? Object.keys(rounds[0].player_stats[0]) 
+      : [],
+    sample_player_stats: (rounds.length > 0 && rounds[0].player_stats?.length > 0) 
+      ? rounds[0].player_stats[0] 
+      : null,
+    sample_kill: match.kills?.length > 0 ? match.kills[0] : null
+  };
+
+  fs.writeFileSync(
+    path.join(__dirname, "round_data.json"),
+    JSON.stringify(output, null, 2)
+  );
+  console.log("Details saved to scratch/round_data.json successfully.");
 }
 
 checkMatch();

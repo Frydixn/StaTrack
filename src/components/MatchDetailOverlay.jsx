@@ -245,9 +245,9 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                             <td className="mdo-player-cell">
                               <div className="mdo-player-avatar-wrap">
                                 {partyColor && (
-                                  <div 
-                                    className="mdo-party-indicator" 
-                                    style={{ backgroundColor: partyColor }} 
+                                  <div
+                                    className="mdo-party-indicator"
+                                    style={{ backgroundColor: partyColor }}
                                     title={`Grupo ${partyIdx + 1}`}
                                   />
                                 )}
@@ -337,9 +337,9 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                             <td className="mdo-player-cell">
                               <div className="mdo-player-avatar-wrap">
                                 {partyColor && (
-                                  <div 
-                                    className="mdo-party-indicator" 
-                                    style={{ backgroundColor: partyColor }} 
+                                  <div
+                                    className="mdo-party-indicator"
+                                    style={{ backgroundColor: partyColor }}
                                     title={`Grupo ${partyIdx + 1}`}
                                   />
                                 )}
@@ -392,8 +392,8 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                     const iconUrl = agentIcons[characterLower];
                     const isSelected = p.puuid === selectedPlayerPuuid;
                     return (
-                      <div 
-                        key={p.puuid} 
+                      <div
+                        key={p.puuid}
                         className={`selector-avatar ${isSelected ? "active" : ""}`}
                         onClick={() => { setSelectedPlayerPuuid(p.puuid); setSelectedRoundIndex(null); }}
                         title={p.name}
@@ -414,8 +414,8 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                     const iconUrl = agentIcons[characterLower];
                     const isSelected = p.puuid === selectedPlayerPuuid;
                     return (
-                      <div 
-                        key={p.puuid} 
+                      <div
+                        key={p.puuid}
                         className={`selector-avatar ${isSelected ? "active" : ""}`}
                         onClick={() => { setSelectedPlayerPuuid(p.puuid); setSelectedRoundIndex(null); }}
                         title={p.name}
@@ -463,15 +463,26 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                   const winningTeam = r.winning_team?.toLowerCase();
                   const won = winningTeam === activePlayerTeam;
 
+                  const roundDeaths = (match.kills || []).some(k => k.round === rIdx && k.victim_puuid === activePlayer.puuid) ? 1 : 0;
+                  const roundAssists = (match.kills || []).filter(k => {
+                    if (k.round !== rIdx) return false;
+                    const assistants = k.assistants || k.assistant_puuids || [];
+                    return assistants.some(ast => {
+                      if (typeof ast === "string") return ast === activePlayer.puuid;
+                      if (ast && typeof ast === "object") return (ast.assistant_puuid === activePlayer.puuid) || (ast.puuid === activePlayer.puuid);
+                      return false;
+                    });
+                  }).length;
+
                   if (side === "attack") {
                     attackKills += activePs.kills || 0;
-                    attackDeaths += activePs.was_killed ? 1 : 0;
-                    attackAssists += activePs.assists || 0;
+                    attackDeaths += roundDeaths;
+                    attackAssists += roundAssists;
                     if (won) attackWins++; else attackLosses++;
                   } else {
                     defenseKills += activePs.kills || 0;
-                    defenseDeaths += activePs.was_killed ? 1 : 0;
-                    defenseAssists += activePs.assists || 0;
+                    defenseDeaths += roundDeaths;
+                    defenseAssists += roundAssists;
                     if (won) defenseWins++; else defenseLosses++;
                   }
                 });
@@ -578,10 +589,10 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                           <span className="name">{activePlayer.name}</span>
                           <span className="tag text-dim">#{activePlayer.tag}</span>
                           {getRankIconUrl(activePlayer.currenttier ?? activePlayer.current_tier ?? activePlayer.tier) && (
-                            <img 
-                              src={getRankIconUrl(activePlayer.currenttier ?? activePlayer.current_tier ?? activePlayer.tier)} 
-                              alt="Rank" 
-                              className="rank-badge-small" 
+                            <img
+                              src={getRankIconUrl(activePlayer.currenttier ?? activePlayer.current_tier ?? activePlayer.tier)}
+                              alt="Rank"
+                              className="rank-badge-small"
                             />
                           )}
                           <span className="rank-name text-dim">
@@ -651,12 +662,21 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
 
                         const ps = r.player_stats?.find((x) => x.player_puuid === activePlayer.puuid) || {};
                         const roundKills = ps.kills || 0;
-                        const roundDeaths = ps.was_killed ? 1 : 0;
-                        const roundAssists = ps.assists || 0;
+                        
+                        const roundDeaths = (match.kills || []).some(k => k.round === rIdx && k.victim_puuid === activePlayer.puuid) ? 1 : 0;
+                        const roundAssists = (match.kills || []).filter(k => {
+                          if (k.round !== rIdx) return false;
+                          const assistants = k.assistants || k.assistant_puuids || [];
+                          return assistants.some(ast => {
+                            if (typeof ast === "string") return ast === activePlayer.puuid;
+                            if (ast && typeof ast === "object") return (ast.assistant_puuid === activePlayer.puuid) || (ast.puuid === activePlayer.puuid);
+                            return false;
+                          });
+                        }).length;
 
                         return (
-                          <div 
-                            key={rIdx} 
+                          <div
+                            key={rIdx}
                             className={`timeline-round-box ${bgClass} ${isSelected ? "active" : ""}`}
                             onClick={() => setSelectedRoundIndex(isSelected ? null : roundNum)}
                           >
@@ -792,8 +812,8 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                               <span className="text-dim">{attackRounds} RDS</span>
                             </div>
                             <div className="progress-bar-wrap">
-                              <div 
-                                className="progress-fill attack" 
+                              <div
+                                className="progress-fill attack"
                                 style={{ width: `${attackWinrate}%` }}
                               />
                             </div>
@@ -833,8 +853,8 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                               <span className="text-dim">{defenseRounds} RDS</span>
                             </div>
                             <div className="progress-bar-wrap">
-                              <div 
-                                className="progress-fill defense" 
+                              <div
+                                className="progress-fill defense"
                                 style={{ width: `${defenseWinrate}%` }}
                               />
                             </div>
