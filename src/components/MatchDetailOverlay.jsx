@@ -200,7 +200,7 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                         const adr = Math.round(dmg / rounds);
 
                         const isMe = p.puuid === puuid;
-                        const tierId = p.current_tier ?? p.tier ?? 0;
+                        const tierId = p.currenttier ?? p.current_tier ?? p.tier ?? 0;
                         const rankIcon = getRankIconUrl(tierId);
 
                         return (
@@ -222,7 +222,7 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                             </td>
                             <td style={{ textAlign: "center" }}>
                               {rankIcon ? (
-                                <img src={rankIcon} alt="Rank" className="mdo-rank-icon" title={p.current_tier_patched} />
+                                <img src={rankIcon} alt="Rank" className="mdo-rank-icon" title={p.currenttier_patched ?? p.current_tier_patched ?? "Unranked"} />
                               ) : (
                                 <span className="text-dim font-oswald" style={{ fontSize: 10 }}>UR</span>
                               )}
@@ -281,7 +281,7 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                         const adr = Math.round(dmg / rounds);
 
                         const isMe = p.puuid === puuid;
-                        const tierId = p.current_tier ?? p.tier ?? 0;
+                        const tierId = p.currenttier ?? p.current_tier ?? p.tier ?? 0;
                         const rankIcon = getRankIconUrl(tierId);
 
                         return (
@@ -303,7 +303,7 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                             </td>
                             <td style={{ textAlign: "center" }}>
                               {rankIcon ? (
-                                <img src={rankIcon} alt="Rank" className="mdo-rank-icon" title={p.current_tier_patched} />
+                                <img src={rankIcon} alt="Rank" className="mdo-rank-icon" title={p.currenttier_patched ?? p.current_tier_patched ?? "Unranked"} />
                               ) : (
                                 <span className="text-dim font-oswald" style={{ fontSize: 10 }}>UR</span>
                               )}
