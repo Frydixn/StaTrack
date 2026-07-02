@@ -4,6 +4,13 @@ import { X, Play, Clock, Server, Monitor, Award, Heart, Shield } from "lucide-re
 export default function MatchDetailOverlay({ match, puuid, onClose }) {
   const [activeTab, setActiveTab] = useState("scoreboard");
   const [agentIcons, setAgentIcons] = useState({});
+  const [selectedPlayerPuuid, setSelectedPlayerPuuid] = useState(puuid);
+  const [selectedRoundIndex, setSelectedRoundIndex] = useState(null);
+
+  useEffect(() => {
+    setSelectedPlayerPuuid(puuid);
+    setSelectedRoundIndex(null);
+  }, [puuid, match]);
 
   // Dynamic fetch of playable agent icons from Valorant-API
   useEffect(() => {
@@ -377,41 +384,494 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
             </div>
           ) : (
             <div className="mdo-performance-tab">
-              {/* Performance Details */}
-              <div className="mdo-perf-summary-card">
-                <div className="card-header font-oswald">INDIVIDUAL STATS VS MATCH AVG</div>
-                <div className="card-body">
-                  <div className="mdo-perf-metric-bar">
-                    <span className="lbl">Average Combat Score (ACS)</span>
-                    <div className="bar-wrapper">
-                      <div className="bar-val font-oswald">{Math.round((me.stats?.score || 0) / (metadata.rounds_played || 1))}</div>
-                      <div className="bar-line-bg">
-                        <div className="bar-line-fill" style={{ width: `${Math.min(100, (Math.round((me.stats?.score || 0) / (metadata.rounds_played || 1)) / 400) * 100)}%` }}></div>
+              {/* Agent selector horizontal row */}
+              <div className="mdo-perf-agent-selector">
+                <div className="agent-list red-team">
+                  {redPlayers.map((p) => {
+                    const characterLower = p.character?.toLowerCase() || "";
+                    const iconUrl = agentIcons[characterLower];
+                    const isSelected = p.puuid === selectedPlayerPuuid;
+                    return (
+                      <div 
+                        key={p.puuid} 
+                        className={`selector-avatar ${isSelected ? "active" : ""}`}
+                        onClick={() => { setSelectedPlayerPuuid(p.puuid); setSelectedRoundIndex(null); }}
+                        title={p.name}
+                      >
+                        {iconUrl ? (
+                          <img src={iconUrl} alt={p.character} />
+                        ) : (
+                          <span className="font-oswald">{p.character?.substring(0, 2).toUpperCase()}</span>
+                        )}
                       </div>
-                    </div>
-                  </div>
-
-                  <div className="mdo-perf-metric-bar">
-                    <span className="lbl">K/D Ratio</span>
-                    <div className="bar-wrapper">
-                      <div className="bar-val font-oswald">{(me.stats?.kills / Math.max(1, me.stats?.deaths)).toFixed(2)}</div>
-                      <div className="bar-line-bg">
-                        <div className="bar-line-fill" style={{ width: `${Math.min(100, ((me.stats?.kills / Math.max(1, me.stats?.deaths)) / 2) * 100)}%`, background: "var(--cyan)" }}></div>
+                    );
+                  })}
+                </div>
+                <span className="vs-divider font-oswald text-dim">VS</span>
+                <div className="agent-list blue-team">
+                  {bluePlayers.map((p) => {
+                    const characterLower = p.character?.toLowerCase() || "";
+                    const iconUrl = agentIcons[characterLower];
+                    const isSelected = p.puuid === selectedPlayerPuuid;
+                    return (
+                      <div 
+                        key={p.puuid} 
+                        className={`selector-avatar ${isSelected ? "active" : ""}`}
+                        onClick={() => { setSelectedPlayerPuuid(p.puuid); setSelectedRoundIndex(null); }}
+                        title={p.name}
+                      >
+                        {iconUrl ? (
+                          <img src={iconUrl} alt={p.character} />
+                        ) : (
+                          <span className="font-oswald">{p.character?.substring(0, 2).toUpperCase()}</span>
+                        )}
                       </div>
-                    </div>
-                  </div>
-
-                  <div className="mdo-perf-metric-bar">
-                    <span className="lbl">Average Damage per Round (ADR)</span>
-                    <div className="bar-wrapper">
-                      <div className="bar-val font-oswald">{Math.round((me.damage_made || me.stats?.damage || 0) / (metadata.rounds_played || 1))}</div>
-                      <div className="bar-line-bg">
-                        <div className="bar-line-fill" style={{ width: `${Math.min(100, (Math.round((me.damage_made || me.stats?.damage || 0) / (metadata.rounds_played || 1)) / 250) * 100)}%`, background: "var(--gold)" }}></div>
-                      </div>
-                    </div>
-                  </div>
+                    );
+                  })}
                 </div>
               </div>
+
+              {/* Active Player details header banner */}
+              {(() => {
+                const activePlayer = allPlayers.find((p) => p.puuid === selectedPlayerPuuid) || me;
+                const activePlayerTeam = activePlayer.team?.toLowerCase() || "blue";
+
+                // Helper to get side of round (Attack / Defense)
+                const getPlayerSide = (roundIndex, playerTeam) => {
+                  const teamLower = playerTeam.toLowerCase();
+                  if (roundIndex <= 12) {
+                    return teamLower === "red" ? "attack" : "defense";
+                  } else if (roundIndex <= 24) {
+                    return teamLower === "red" ? "defense" : "attack";
+                  } else {
+                    const isOdd = roundIndex % 2 === 1;
+                    return teamLower === "red" ? (isOdd ? "attack" : "defense") : (isOdd ? "defense" : "attack");
+                  }
+                };
+
+                // Halves stats calculation
+                const rounds = match.rounds || [];
+                let attackKills = 0, attackDeaths = 0, attackAssists = 0, attackWins = 0, attackLosses = 0;
+                let defenseKills = 0, defenseDeaths = 0, defenseAssists = 0, defenseWins = 0, defenseLosses = 0;
+
+                rounds.forEach((r, rIdx) => {
+                  const roundNum = rIdx + 1;
+                  const activePs = r.player_stats?.find(ps => ps.player_puuid === activePlayer.puuid);
+                  if (!activePs) return;
+
+                  const side = getPlayerSide(roundNum, activePlayer.team || "blue");
+                  const winningTeam = r.winning_team?.toLowerCase();
+                  const won = winningTeam === activePlayerTeam;
+
+                  if (side === "attack") {
+                    attackKills += activePs.kills || 0;
+                    attackDeaths += activePs.was_killed ? 1 : 0;
+                    attackAssists += activePs.assists || 0;
+                    if (won) attackWins++; else attackLosses++;
+                  } else {
+                    defenseKills += activePs.kills || 0;
+                    defenseDeaths += activePs.was_killed ? 1 : 0;
+                    defenseAssists += activePs.assists || 0;
+                    if (won) defenseWins++; else defenseLosses++;
+                  }
+                });
+
+                const attackRounds = attackWins + attackLosses;
+                const defenseRounds = defenseWins + defenseLosses;
+                const attackKD = attackDeaths > 0 ? (attackKills / attackDeaths).toFixed(2) : attackKills.toFixed(2);
+                const defenseKD = defenseDeaths > 0 ? (defenseKills / defenseDeaths).toFixed(2) : defenseKills.toFixed(2);
+
+                const attackWinrate = attackRounds > 0 ? Math.round((attackWins / attackRounds) * 100) : 0;
+                const defenseWinrate = defenseRounds > 0 ? Math.round((defenseWins / defenseRounds) * 100) : 0;
+
+                // Opponents stats table calculation
+                const opponentTeamName = activePlayerTeam === "red" ? "blue" : "red";
+                const opponents = allPlayers.filter(p => p.team?.toLowerCase() === opponentTeamName);
+
+                const vsOpponentsData = opponents.map(opt => {
+                  let totalDealt = 0;
+                  let totalRecv = 0;
+                  const targetRoundsForVS = selectedRoundIndex !== null
+                    ? [rounds[selectedRoundIndex - 1]].filter(Boolean)
+                    : rounds;
+
+                  targetRoundsForVS.forEach(r => {
+                    const activePs = r.player_stats?.find(ps => ps.player_puuid === activePlayer.puuid);
+                    if (activePs && activePs.damage_events) {
+                      activePs.damage_events.forEach(de => {
+                        if (de.receiver_puuid === opt.puuid) {
+                          totalDealt += de.damage || 0;
+                        }
+                      });
+                    }
+
+                    const optPs = r.player_stats?.find(ps => ps.player_puuid === opt.puuid);
+                    if (optPs && optPs.damage_events) {
+                      optPs.damage_events.forEach(de => {
+                        if (de.receiver_puuid === activePlayer.puuid) {
+                          totalRecv += de.damage || 0;
+                        }
+                      });
+                    }
+                  });
+
+                  // Kills/deaths details from match.kills
+                  const matchKills = match.kills || [];
+                  const killsCount = matchKills.filter(k => {
+                    const isCorrectRound = selectedRoundIndex === null || k.round === selectedRoundIndex - 1;
+                    return isCorrectRound && k.killer_puuid === activePlayer.puuid && k.victim_puuid === opt.puuid;
+                  }).length;
+
+                  const deathsCount = matchKills.filter(k => {
+                    const isCorrectRound = selectedRoundIndex === null || k.round === selectedRoundIndex - 1;
+                    return isCorrectRound && k.killer_puuid === opt.puuid && k.victim_puuid === activePlayer.puuid;
+                  }).length;
+
+                  return {
+                    player: opt,
+                    dealt: totalDealt,
+                    recv: totalRecv,
+                    kills: killsCount,
+                    deaths: deathsCount
+                  };
+                }).sort((a, b) => b.dealt - a.dealt);
+
+                // Weapon usage calculation
+                const weaponStats = {};
+                const targetRoundsForWeapons = selectedRoundIndex !== null
+                  ? [rounds[selectedRoundIndex - 1]].filter(Boolean)
+                  : rounds;
+
+                targetRoundsForWeapons.forEach((r, rIdx) => {
+                  const activePs = r.player_stats?.find(ps => ps.player_puuid === activePlayer.puuid);
+                  if (!activePs) return;
+
+                  const weaponName = activePs.economy?.weapon?.name || activePs.weapon?.name || activePs.economy?.weapon_name || "Classic";
+                  if (!weaponStats[weaponName]) {
+                    weaponStats[weaponName] = { name: weaponName, kills: 0, damage: 0 };
+                  }
+
+                  const roundIndexForKills = selectedRoundIndex !== null ? selectedRoundIndex - 1 : rIdx;
+                  const killsInRound = (match.kills || []).filter(k =>
+                    k.round === roundIndexForKills &&
+                    k.killer_puuid === activePlayer.puuid
+                  ).length;
+
+                  weaponStats[weaponName].kills += killsInRound;
+                  weaponStats[weaponName].damage += activePs.damage || 0;
+                });
+
+                const sortedWeapons = Object.values(weaponStats).sort((a, b) => b.kills - a.kills || b.damage - a.damage);
+
+                return (
+                  <>
+                    <div className="mdo-perf-player-header">
+                      <div className="avatar-side">
+                        {agentIcons[activePlayer.character?.toLowerCase()] ? (
+                          <img src={agentIcons[activePlayer.character?.toLowerCase()]} alt={activePlayer.character} className="avatar-img" />
+                        ) : (
+                          <div className="avatar-fallback font-oswald">{activePlayer.character?.substring(0, 2).toUpperCase()}</div>
+                        )}
+                      </div>
+                      <div className="info-side">
+                        <div className="name-row font-oswald">
+                          <span className="name">{activePlayer.name}</span>
+                          <span className="tag text-dim">#{activePlayer.tag}</span>
+                          {getRankIconUrl(activePlayer.currenttier ?? activePlayer.current_tier ?? activePlayer.tier) && (
+                            <img 
+                              src={getRankIconUrl(activePlayer.currenttier ?? activePlayer.current_tier ?? activePlayer.tier)} 
+                              alt="Rank" 
+                              className="rank-badge-small" 
+                            />
+                          )}
+                          <span className="rank-name text-dim">
+                            {activePlayer.currenttier_patched ?? activePlayer.current_tier_patched ?? "Unranked"}
+                          </span>
+                          <span className="agent-tag">{activePlayer.character?.toUpperCase()}</span>
+                        </div>
+
+                        <div className="stats-row font-oswald">
+                          <div className="stat-box">
+                            <span className="lbl text-dim">K/D/A</span>
+                            <span className="val">{activePlayer.stats?.kills}/{activePlayer.stats?.deaths}/{activePlayer.stats?.assists}</span>
+                          </div>
+                          <div className="stat-box">
+                            <span className="lbl text-dim">K/D</span>
+                            <span className="val" style={{ color: (activePlayer.stats?.kills / Math.max(1, activePlayer.stats?.deaths)) >= 1.0 ? "var(--cyan)" : "var(--red)" }}>
+                              {(activePlayer.stats?.kills / Math.max(1, activePlayer.stats?.deaths)).toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="stat-box">
+                            <span className="lbl text-dim">ADR</span>
+                            <span className="val">{Math.round((activePlayer.damage_made || activePlayer.stats?.damage || 0) / (metadata.rounds_played || 1))}</span>
+                          </div>
+                          <div className="stat-box">
+                            <span className="lbl text-dim">ACS</span>
+                            <span className="val">{Math.round((activePlayer.stats?.score || 0) / (metadata.rounds_played || 1))}</span>
+                          </div>
+                          <div className="stat-box">
+                            <span className="lbl text-dim">HS%</span>
+                            <span className="val">
+                              {(() => {
+                                const hsCount = activePlayer.stats?.headshots || 0;
+                                const totalShots = (activePlayer.stats?.headshots || 0) + (activePlayer.stats?.bodyshots || 0) + (activePlayer.stats?.legshots || 0);
+                                return totalShots > 0 ? `${Math.round((hsCount / totalShots) * 100)}%` : "0%";
+                              })()}
+                            </span>
+                          </div>
+                          <div className="stat-box">
+                            <span className="lbl text-dim">KAST</span>
+                            <span className="val">
+                              {(() => {
+                                let kastRounds = 0;
+                                rounds.forEach((r) => {
+                                  const ps = r.player_stats?.find((x) => x.player_puuid === activePlayer.puuid);
+                                  if (!ps) return;
+                                  if ((ps.kills || 0) > 0 || (ps.assists || 0) > 0 || !ps.was_killed) {
+                                    kastRounds++;
+                                  }
+                                });
+                                return rounds.length > 0 ? `${Math.round((kastRounds / rounds.length) * 100)}%` : "—";
+                              })()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Timeline Rounds Grid */}
+                    <div className="mdo-perf-rounds-timeline">
+                      {Array.from({ length: metadata.rounds_played || rounds.length || 0 }).map((_, rIdx) => {
+                        const roundNum = rIdx + 1;
+                        const r = rounds[rIdx] || {};
+                        const winningTeam = r.winning_team?.toLowerCase();
+                        const isRoundWin = winningTeam === activePlayerTeam;
+                        const bgClass = isRoundWin ? "win" : "loss";
+                        const isSelected = selectedRoundIndex === roundNum;
+
+                        const ps = r.player_stats?.find((x) => x.player_puuid === activePlayer.puuid) || {};
+                        const roundKills = ps.kills || 0;
+                        const roundDeaths = ps.was_killed ? 1 : 0;
+                        const roundAssists = ps.assists || 0;
+
+                        return (
+                          <div 
+                            key={rIdx} 
+                            className={`timeline-round-box ${bgClass} ${isSelected ? "active" : ""}`}
+                            onClick={() => setSelectedRoundIndex(isSelected ? null : roundNum)}
+                          >
+                            <span className="round-num">{roundNum}</span>
+                            <div className="round-events">
+                              {Array.from({ length: roundKills }).map((_, kI) => (
+                                <span key={`k-${kI}`} className="event-kill">+</span>
+                              ))}
+                              {roundAssists > 0 && roundKills === 0 && (
+                                <span className="event-assist">-</span>
+                              )}
+                              {roundDeaths > 0 && (
+                                <span className="event-death">•</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Selected Round Label Bar */}
+                    {selectedRoundIndex !== null && (
+                      <div className="mdo-perf-selected-bar font-oswald">
+                        <span>ROUND {selectedRoundIndex} SELECTED</span>
+                        <button className="clear-filter-btn font-oswald" onClick={() => setSelectedRoundIndex(null)}>
+                          CLEAR
+                        </button>
+                      </div>
+                    )}
+
+                    {/* VS Opponents and Weapon Usage panels */}
+                    <div className="mdo-perf-panels-row">
+                      {/* VS OPPONENTS table */}
+                      <div className="mdo-perf-panel-card">
+                        <div className="panel-header font-oswald">
+                          <span>{selectedRoundIndex !== null ? `ROUND ${selectedRoundIndex}` : "ALL ROUNDS"}</span>
+                          <span className="text-dim">VS OPPONENTS</span>
+                        </div>
+                        <div className="panel-body">
+                          <table className="mdo-perf-table">
+                            <thead>
+                              <tr>
+                                <th>PLAYER</th>
+                                <th style={{ textAlign: "right" }}>DEALT</th>
+                                <th style={{ textAlign: "right" }}>RECV</th>
+                                <th style={{ textAlign: "right" }}>K</th>
+                                <th style={{ textAlign: "right" }}>D</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {vsOpponentsData.map((row, idx) => {
+                                const iconUrl = agentIcons[row.player.character?.toLowerCase()];
+                                return (
+                                  <tr key={idx}>
+                                    <td className="mdo-perf-player-cell">
+                                      <div className="avatar-square-tiny">
+                                        {iconUrl ? (
+                                          <img src={iconUrl} alt={row.player.character} />
+                                        ) : (
+                                          <span>{row.player.character?.substring(0, 2).toUpperCase()}</span>
+                                        )}
+                                      </div>
+                                      <div className="name-wrap">
+                                        <span className="name font-oswald">{row.player.name}</span>
+                                        <span className="tag">#{row.player.tag}</span>
+                                      </div>
+                                    </td>
+                                    <td className="font-oswald" style={{ textAlign: "right", color: row.dealt > 0 ? "var(--text)" : "var(--text-dim)" }}>
+                                      {row.dealt || "0"}
+                                    </td>
+                                    <td className="font-oswald" style={{ textAlign: "right", color: row.recv > 0 ? "var(--text)" : "var(--text-dim)" }}>
+                                      {row.recv || "0"}
+                                    </td>
+                                    <td className="font-oswald" style={{ textAlign: "right", color: row.kills > 0 ? "var(--cyan)" : "var(--text-dim)" }}>
+                                      {row.kills || "—"}
+                                    </td>
+                                    <td className="font-oswald" style={{ textAlign: "right", color: row.deaths > 0 ? "var(--red)" : "var(--text-dim)" }}>
+                                      {row.deaths || "—"}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      {/* WEAPON USAGE table */}
+                      <div className="mdo-perf-panel-card">
+                        <div className="panel-header font-oswald">
+                          <span>WEAPON USAGE</span>
+                          <span className="text-dim">{selectedRoundIndex !== null ? `ROUND ${selectedRoundIndex}` : "ALL ROUNDS"}</span>
+                        </div>
+                        <div className="panel-body">
+                          <table className="mdo-perf-table">
+                            <thead>
+                              <tr>
+                                <th>WEAPON</th>
+                                <th style={{ textAlign: "right" }}>K</th>
+                                <th style={{ textAlign: "right" }}>DMG</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {sortedWeapons.map((row, idx) => (
+                                <tr key={idx}>
+                                  <td className="font-oswald text-uppercase">{row.name}</td>
+                                  <td className="font-oswald" style={{ textAlign: "right", color: row.kills > 0 ? "var(--cyan)" : "var(--text-dim)" }}>
+                                    {row.kills || "—"}
+                                  </td>
+                                  <td className="font-oswald" style={{ textAlign: "right" }}>{row.damage || "0"}</td>
+                                </tr>
+                              ))}
+                              {sortedWeapons.length === 0 && (
+                                <tr>
+                                  <td colSpan="3" style={{ textAlign: "center" }} className="text-dim">No weapon data recorded</td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* HALF BREAKDOWN breakdown (Attack / Defense split) - only for ALL ROUNDS */}
+                    {selectedRoundIndex === null && (
+                      <div className="mdo-perf-half-breakdown">
+                        <div className="half-header font-oswald">HALF BREAKDOWN</div>
+                        <div className="half-row">
+                          {/* Attack half */}
+                          <div className="half-col">
+                            <div className="side-title font-oswald">
+                              <span style={{ color: "var(--gold)" }}>★ ATTACK</span>
+                              <span className="text-dim">{attackRounds} RDS</span>
+                            </div>
+                            <div className="progress-bar-wrap">
+                              <div 
+                                className="progress-fill attack" 
+                                style={{ width: `${attackWinrate}%` }}
+                              />
+                            </div>
+                            <div className="half-stats-grid font-oswald">
+                              <div className="h-stat">
+                                <span className="lbl text-dim">K</span>
+                                <span className="val">{attackKills}</span>
+                              </div>
+                              <div className="h-stat">
+                                <span className="lbl text-dim">D</span>
+                                <span className="val">{attackDeaths}</span>
+                              </div>
+                              <div className="h-stat">
+                                <span className="lbl text-dim">A</span>
+                                <span className="val">{attackAssists}</span>
+                              </div>
+                              <div className="h-stat">
+                                <span className="lbl text-dim">K/D</span>
+                                <span className="val" style={{ color: Number(attackKD) >= 1.0 ? "var(--cyan)" : "var(--red)" }}>
+                                  {attackKD}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="half-record font-oswald">
+                              <span className="text-dim">{attackWinrate}% WIN</span>
+                              <span className="bullet text-dim">•</span>
+                              <span className="text-win">{attackWins}W</span>
+                              <span className="text-dim">/</span>
+                              <span className="text-loss">{attackLosses}L</span>
+                            </div>
+                          </div>
+
+                          {/* Defense half */}
+                          <div className="half-col">
+                            <div className="side-title font-oswald">
+                              <span style={{ color: "var(--cyan)" }}>🛡 DEFENSE</span>
+                              <span className="text-dim">{defenseRounds} RDS</span>
+                            </div>
+                            <div className="progress-bar-wrap">
+                              <div 
+                                className="progress-fill defense" 
+                                style={{ width: `${defenseWinrate}%` }}
+                              />
+                            </div>
+                            <div className="half-stats-grid font-oswald">
+                              <div className="h-stat">
+                                <span className="lbl text-dim">K</span>
+                                <span className="val">{defenseKills}</span>
+                              </div>
+                              <div className="h-stat">
+                                <span className="lbl text-dim">D</span>
+                                <span className="val">{defenseDeaths}</span>
+                              </div>
+                              <div className="h-stat">
+                                <span className="lbl text-dim">A</span>
+                                <span className="val">{defenseAssists}</span>
+                              </div>
+                              <div className="h-stat">
+                                <span className="lbl text-dim">K/D</span>
+                                <span className="val" style={{ color: Number(defenseKD) >= 1.0 ? "var(--cyan)" : "var(--red)" }}>
+                                  {defenseKD}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="half-record font-oswald">
+                              <span className="text-dim">{defenseWinrate}% WIN</span>
+                              <span className="bullet text-dim">•</span>
+                              <span className="text-win">{defenseWins}W</span>
+                              <span className="text-dim">/</span>
+                              <span className="text-loss">{defenseLosses}L</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           )}
         </div>
