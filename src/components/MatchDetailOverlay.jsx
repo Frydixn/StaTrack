@@ -6,11 +6,26 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
   const [agentIcons, setAgentIcons] = useState({});
   const [selectedPlayerPuuid, setSelectedPlayerPuuid] = useState(puuid);
   const [selectedRoundIndex, setSelectedRoundIndex] = useState(null);
+  const [selectedRoundTab, setSelectedRoundTab] = useState(1);
+  const [mapsData, setMapsData] = useState([]);
 
   useEffect(() => {
     setSelectedPlayerPuuid(puuid);
     setSelectedRoundIndex(null);
+    setSelectedRoundTab(1);
   }, [puuid, match]);
+
+  // Fetch Valorant maps info for minimap plotting
+  useEffect(() => {
+    fetch("https://valorant-api.com/v1/maps")
+      .then((res) => res.json())
+      .then((resJson) => {
+        if (resJson.data) {
+          setMapsData(resJson.data);
+        }
+      })
+      .catch((err) => console.error("Error fetching maps for rounds visualization:", err));
+  }, []);
 
   // Lock body scroll when overlay is active, restore on close
   useEffect(() => {
@@ -225,11 +240,17 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
           >
             PERFORMANCE
           </button>
+          <button
+            className={`mdo-tab-link font-oswald ${activeTab === "rounds" ? "active" : ""}`}
+            onClick={() => setActiveTab("rounds")}
+          >
+            ROUNDS
+          </button>
         </div>
 
         {/* Tab Content */}
         <div className="mdo-content">
-          {activeTab === "scoreboard" ? (
+          {activeTab === "scoreboard" && (
             <div className="mdo-scoreboard-tab">
               {/* Render Team Red */}
               <div className="mdo-team-section">
@@ -415,7 +436,9 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                 </div>
               </div>
             </div>
-          ) : (
+          )}
+
+          {activeTab === "performance" && (
             <div className="mdo-performance-tab">
               {/* Agent selector horizontal row */}
               <div className="mdo-perf-agent-selector">
@@ -967,6 +990,314 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                       </div>
                     )}
                   </>
+                );
+              })()}
+            </div>
+          )}
+
+          {activeTab === "rounds" && (
+            <div className="mdo-rounds-tab">
+              {/* Rounds Horizontal Nav */}
+              <div className="mdo-rounds-grid-nav">
+                {Array.from({ length: match.rounds?.length || metadata.rounds_played || 0 }).map((_, rIdx) => {
+                  const rNum = rIdx + 1;
+                  const roundObj = match.rounds?.[rIdx] || {};
+                  const winningTeam = roundObj.winning_team?.toLowerCase();
+                  const isWin = winningTeam === (me.team?.toLowerCase() || "blue");
+                  const isActive = selectedRoundTab === rNum;
+                  return (
+                    <button 
+                      key={rIdx}
+                      className={`mdo-round-btn ${isWin ? "win" : "loss"} ${isActive ? "active" : ""}`}
+                      onClick={() => setSelectedRoundTab(rNum)}
+                    >
+                      {rNum}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Round Details Visualizer */}
+              {(() => {
+                const totalRounds = match.rounds?.length || 0;
+                if (totalRounds === 0) {
+                  return <div className="text-dim font-oswald text-center pad-20">No rounds recorded for this match.</div>;
+                }
+
+                const currentRound = match.rounds?.[selectedRoundTab - 1] || {};
+                const roundKills = (match.kills || []).filter(k => k.round === selectedRoundTab - 1);
+                
+                const plantEvent = currentRound.spike_plant_event;
+                const defuseEvent = currentRound.spike_defuse_event;
+
+                const activeMapObj = mapsData.find(
+                  (m) => m.displayName?.toLowerCase() === mapName?.toLowerCase()
+                );
+
+                const convertCoords = (x, y) => {
+                  if (!activeMapObj) return { x: 50, y: 50 };
+                  const { xMultiplier, yMultiplier, xScalarToAdd, yScalarToAdd } = activeMapObj;
+                  return {
+                    x: ((y * xMultiplier) + xScalarToAdd) * 100,
+                    y: ((x * yMultiplier) + yScalarToAdd) * 100
+                  };
+                };
+
+                const isValidLoc = (loc) => loc && (loc.x !== undefined && loc.y !== undefined && (loc.x !== 0 || loc.y !== 0));
+
+                const formatRoundTime = (msOrSec) => {
+                  if (msOrSec === undefined || msOrSec === null) return "";
+                  const totalSeconds = msOrSec > 1000 ? Math.floor(msOrSec / 1000) : Math.floor(msOrSec);
+                  const minutes = Math.floor(totalSeconds / 60);
+                  const seconds = totalSeconds % 60;
+                  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+                };
+
+                // Build round chronological timeline
+                const roundEventsList = [];
+
+                roundKills.forEach((k) => {
+                  roundEventsList.push({
+                    type: "kill",
+                    time: k.kill_time_in_round || 0,
+                    data: k
+                  });
+                });
+
+                if (plantEvent) {
+                  roundEventsList.push({
+                    type: "plant",
+                    time: plantEvent.plant_time_in_round || 0,
+                    data: plantEvent
+                  });
+                }
+
+                if (defuseEvent) {
+                  roundEventsList.push({
+                    type: "defuse",
+                    time: defuseEvent.defuse_time_in_round || 0,
+                    data: defuseEvent
+                  });
+                }
+
+                // Sort timeline ascending by time
+                roundEventsList.sort((a, b) => a.time - b.time);
+
+                return (
+                  <div className="mdo-round-visualizer-container">
+                    {/* Left side: Minimap */}
+                    <div className="mdo-round-minimap-side">
+                      <div className="mdo-minimap-card">
+                        <div className="card-header font-oswald text-uppercase">
+                          MAP LAYOUT • {mapName}
+                        </div>
+                        <div className="card-body">
+                          {activeMapObj?.displayIcon ? (
+                            <div className="mdo-minimap-canvas-wrapper">
+                              <img 
+                                src={activeMapObj.displayIcon} 
+                                alt={`${mapName} Layout`} 
+                                className="mdo-minimap-canvas-bg"
+                              />
+
+                              {/* SVG Trajectory Lines */}
+                              <svg className="mdo-minimap-canvas-svg" viewBox="0 0 100 100">
+                                {roundKills.map((k, idx) => {
+                                  const killerLoc = k.killer_location;
+                                  const victimLoc = k.victim_death_location;
+
+                                  if (!isValidLoc(killerLoc) || !isValidLoc(victimLoc)) return null;
+
+                                  const killerPct = convertCoords(killerLoc.x, killerLoc.y);
+                                  const victimPct = convertCoords(victimLoc.x, victimLoc.y);
+
+                                  const killerTeamColor = allPlayers.find(p => p.puuid === k.killer_puuid)?.team?.toLowerCase() === "red" ? "var(--red)" : "var(--cyan)";
+
+                                  return (
+                                    <line 
+                                      key={idx}
+                                      x1={killerPct.x}
+                                      y1={killerPct.y}
+                                      x2={victimPct.x}
+                                      y2={victimPct.y}
+                                      stroke={killerTeamColor}
+                                      strokeWidth="1.5"
+                                      strokeDasharray="2 1"
+                                    />
+                                  );
+                                })}
+                              </svg>
+
+                              {/* Killer & Victim Coordinates Markers */}
+                              {roundKills.map((k, idx) => {
+                                const killerLoc = k.killer_location;
+                                const victimLoc = k.victim_death_location;
+                                
+                                const killerPct = isValidLoc(killerLoc) ? convertCoords(killerLoc.x, killerLoc.y) : null;
+                                const victimPct = isValidLoc(victimLoc) ? convertCoords(victimLoc.x, victimLoc.y) : null;
+
+                                const killerTeam = allPlayers.find(p => p.puuid === k.killer_puuid)?.team?.toLowerCase() || "blue";
+                                const victimTeam = allPlayers.find(p => p.puuid === k.victim_puuid)?.team?.toLowerCase() || "red";
+
+                                const killerIcon = agentIcons[k.killer_character?.toLowerCase()];
+                                const victimIcon = agentIcons[k.victim_character?.toLowerCase()];
+
+                                return (
+                                  <React.Fragment key={idx}>
+                                    {killerPct && (
+                                      <div 
+                                        className={`mdo-minimap-marker killer ${killerTeam}`}
+                                        style={{ left: `${killerPct.x}%`, top: `${killerPct.y}%` }}
+                                        title={`${k.killer_display_name} (${k.killer_character})`}
+                                      >
+                                        {killerIcon ? <img src={killerIcon} alt={k.killer_character} /> : <span>K</span>}
+                                      </div>
+                                    )}
+                                    {victimPct && (
+                                      <div 
+                                        className={`mdo-minimap-marker victim ${victimTeam}`}
+                                        style={{ left: `${victimPct.x}%`, top: `${victimPct.y}%` }}
+                                        title={`${k.victim_display_name} (${k.victim_character})`}
+                                      >
+                                        {victimIcon ? <img src={victimIcon} alt={k.victim_character} /> : <span>V</span>}
+                                        <div className="victim-cross">❌</div>
+                                      </div>
+                                    )}
+                                  </React.Fragment>
+                                );
+                              })}
+
+                              {/* Plant Marker */}
+                              {plantEvent && isValidLoc(plantEvent.plant_location || plantEvent.location) && (() => {
+                                const plantLoc = plantEvent.plant_location || plantEvent.location;
+                                const plantPct = convertCoords(plantLoc.x, plantLoc.y);
+                                return (
+                                  <div 
+                                    className="mdo-minimap-marker spike-plant"
+                                    style={{ left: `${plantPct.x}%`, top: `${plantPct.y}%` }}
+                                    title={`Spike plantada por ${plantEvent.planted_by?.display_name || "Atacante"}`}
+                                  >
+                                    💥
+                                  </div>
+                                );
+                              })()}
+
+                              {/* Defuse Marker */}
+                              {defuseEvent && isValidLoc(defuseEvent.defuse_location || defuseEvent.location) && (() => {
+                                const defuseLoc = defuseEvent.defuse_location || defuseEvent.location;
+                                const defusePct = convertCoords(defuseLoc.x, defuseLoc.y);
+                                return (
+                                  <div 
+                                    className="mdo-minimap-marker spike-defuse"
+                                    style={{ left: `${defusePct.x}%`, top: `${defusePct.y}%` }}
+                                    title={`Spike desactivada por ${defuseEvent.defused_by?.display_name || "Defensor"}`}
+                                  >
+                                    🛡
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          ) : (
+                            <div className="mdo-minimap-loading text-dim font-oswald text-center pad-20">
+                              Cargando minimapa táctico...
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right side: Event Timeline Feed */}
+                    <div className="mdo-round-timeline-side">
+                      <div className="mdo-perf-panel-card">
+                        <div className="panel-header font-oswald">
+                          <span>CRONOLOGÍA DE LA RONDA</span>
+                          <span className="text-dim">RONDA {selectedRoundTab}</span>
+                        </div>
+                        <div className="panel-body">
+                          <div className="mdo-round-events-feed">
+                            {roundEventsList.map((ev, evIdx) => {
+                              const timeStr = formatRoundTime(ev.time);
+                              
+                              if (ev.type === "kill") {
+                                const k = ev.data;
+                                const killerIcon = agentIcons[k.killer_character?.toLowerCase()];
+                                const victimIcon = agentIcons[k.victim_character?.toLowerCase()];
+                                const killerTeam = allPlayers.find(p => p.puuid === k.killer_puuid)?.team?.toLowerCase() || "blue";
+                                const victimTeam = allPlayers.find(p => p.puuid === k.victim_puuid)?.team?.toLowerCase() || "red";
+                                
+                                return (
+                                  <div key={evIdx} className="mdo-feed-event-item kill">
+                                    <span className="event-time font-oswald">{timeStr}</span>
+                                    <div className="event-details">
+                                      <div className={`event-actor killer ${killerTeam}`}>
+                                        {killerIcon && <img src={killerIcon} alt={k.killer_character} className="agent-icon" />}
+                                        <span className="font-oswald">{k.killer_display_name}</span>
+                                      </div>
+                                      <span className="event-verb text-dim font-oswald">
+                                        [{k.weapon_name?.toUpperCase() || "ELIMINÓ"}]
+                                      </span>
+                                      <div className={`event-actor victim ${victimTeam}`}>
+                                        {victimIcon && <img src={victimIcon} alt={k.victim_character} className="agent-icon" />}
+                                        <span className="font-oswald">{k.victim_display_name}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              }
+
+                              if (ev.type === "plant") {
+                                const p = ev.data;
+                                const planterName = p.planted_by?.display_name || p.planted_by || "Atacante";
+                                const planterCharacter = p.planted_by?.character || "";
+                                const planterIcon = agentIcons[planterCharacter.toLowerCase()];
+
+                                return (
+                                  <div key={evIdx} className="mdo-feed-event-item plant">
+                                    <span className="event-time font-oswald">{timeStr}</span>
+                                    <div className="event-details">
+                                      <div className="event-actor plant-actor">
+                                        {planterIcon && <img src={planterIcon} alt={planterCharacter} className="agent-icon" />}
+                                        <span className="font-oswald" style={{ color: "var(--gold)" }}>{planterName}</span>
+                                      </div>
+                                      <span className="event-verb text-win-soft font-oswald font-bold">SPIKE PLANTED 💥</span>
+                                    </div>
+                                  </div>
+                                );
+                              }
+
+                              if (ev.type === "defuse") {
+                                const d = ev.data;
+                                const defuserName = d.defused_by?.display_name || d.defused_by || "Defensor";
+                                const defuserCharacter = d.defused_by?.character || "";
+                                const defuserIcon = agentIcons[defuserCharacter.toLowerCase()];
+
+                                return (
+                                  <div key={evIdx} className="mdo-feed-event-item defuse">
+                                    <span className="event-time font-oswald">{timeStr}</span>
+                                    <div className="event-details">
+                                      <div className="event-actor defuse-actor">
+                                        {defuserIcon && <img src={defuserIcon} alt={defuserCharacter} className="agent-icon" />}
+                                        <span className="font-oswald" style={{ color: "var(--cyan)" }}>{defuserName}</span>
+                                      </div>
+                                      <span className="event-verb text-win font-bold font-oswald">SPIKE DEFUSED 🛡</span>
+                                    </div>
+                                  </div>
+                                );
+                              }
+
+                              return null;
+                            })}
+
+                            {roundEventsList.length === 0 && (
+                              <div className="text-dim font-oswald text-center pad-20">
+                                Sin bajas ni eventos de Spike registrados en esta ronda.
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 );
               })()}
             </div>

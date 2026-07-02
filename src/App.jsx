@@ -9,6 +9,7 @@ import AchievementsGrid from "./components/AchievementsGrid";
 import ComparePanel from "./components/ComparePanel";
 import Sidebar from "./components/Sidebar";
 import TrackerView from "./components/TrackerView";
+import MapsView from "./components/MapsView";
 import { supabase } from "./services/supabaseClient";
 import {
   getAccount, getMMR, getMMRHistory,
@@ -385,11 +386,15 @@ export default function App() {
 
           {error && <div className="state-msg error">{error}</div>}
 
-          {!loading && !error && !playerData && (
+          {!loading && !error && activeTab === "maps" && (
+            <MapsView />
+          )}
+
+          {!loading && !error && activeTab !== "maps" && !playerData && (
             <div className="state-msg">Esperando un Riot ID para empezar a escanear...</div>
           )}
 
-          {!loading && playerData && (
+          {!loading && !error && activeTab !== "maps" && playerData && (
             <div className="results-container">
               <PlayerProfileBar
                 account={playerData.account}

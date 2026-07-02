@@ -3716,3 +3716,510 @@ footer {
   font-size: 10.5px;
   font-weight: 600;
 }
+
+/* ==========================================
+   Maps View Dashboard Styles
+   ========================================== */
+
+.maps-view-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 16px;
+  background: var(--bg-panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  min-height: calc(100vh - 200px);
+}
+
+.maps-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1.5px solid var(--line);
+  padding-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.maps-title-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.maps-title-section h1 {
+  font-size: 20px;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.maps-title-icon {
+  color: var(--red);
+}
+
+.maps-filter-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.maps-filter-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
+  color: var(--text-dim);
+  padding: 6px 14px;
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.maps-filter-btn:hover {
+  border-color: var(--text-dim);
+  color: var(--text);
+}
+
+.maps-filter-btn.active {
+  background: var(--red);
+  color: var(--text);
+  border-color: var(--red);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.25);
+}
+
+.maps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.map-card {
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.map-card-banner {
+  height: 140px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.map-card-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom, rgba(15, 25, 35, 0.4), rgba(15, 25, 35, 0.9));
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 16px;
+}
+
+.map-card-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.map-card-text .map-name {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+.map-card-text .map-coordinate {
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
+.map-card-minimap-wrap {
+  width: 50px;
+  height: 50px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.4);
+  flex-shrink: 0;
+}
+
+.map-card-minimap-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.map-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  font-size: 9px;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.active-pool-badge {
+  margin-left: auto;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+.maps-loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 0;
+}
+
+.maps-empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px;
+}
+
+
+/* ==========================================
+   Rounds Tab minimap & visualization styles
+   ========================================== */
+
+.mdo-rounds-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.mdo-rounds-grid-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 10px;
+}
+
+.mdo-round-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Oswald', sans-serif;
+  cursor: pointer;
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.mdo-round-btn.win {
+  color: var(--cyan);
+  border-color: rgba(6, 182, 212, 0.15);
+  background: rgba(6, 182, 212, 0.02);
+}
+
+.mdo-round-btn.win:hover {
+  background: rgba(6, 182, 212, 0.08);
+  border-color: var(--cyan);
+}
+
+.mdo-round-btn.loss {
+  color: var(--red);
+  border-color: rgba(239, 68, 68, 0.15);
+  background: rgba(239, 68, 68, 0.02);
+}
+
+.mdo-round-btn.loss:hover {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: var(--red);
+}
+
+.mdo-round-btn.active.win {
+  background: var(--cyan) !important;
+  color: var(--bg-panel) !important;
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.4);
+}
+
+.mdo-round-btn.active.loss {
+  background: var(--red) !important;
+  color: var(--text) !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+}
+
+/* ROUND DETAIL FLEX ROW */
+.mdo-round-visualizer-container {
+  display: flex;
+  gap: 16px;
+}
+
+.mdo-round-minimap-side {
+  width: 45%;
+  min-width: 320px;
+  max-width: 400px;
+}
+
+.mdo-round-timeline-side {
+  flex: 1;
+  min-width: 0;
+}
+
+.mdo-minimap-card {
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.mdo-minimap-card .card-header {
+  padding: 10px 16px;
+  background: rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid var(--line);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.mdo-minimap-card .card-body {
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mdo-minimap-canvas-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background-color: rgba(15, 25, 35, 0.4);
+  border: 1.5px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+}
+
+.mdo-minimap-canvas-bg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.mdo-minimap-canvas-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* MINIMAP MARKERS */
+.mdo-minimap-marker {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  z-index: 10;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  background-color: var(--bg-panel);
+  overflow: visible;
+  user-select: none;
+}
+
+.mdo-minimap-marker img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.mdo-minimap-marker.killer.red {
+  border-color: var(--red);
+  box-shadow: 0 0 8px var(--red);
+}
+
+.mdo-minimap-marker.killer.blue {
+  border-color: var(--cyan);
+  box-shadow: 0 0 8px var(--cyan);
+}
+
+.mdo-minimap-marker.victim {
+  border-color: var(--red);
+  opacity: 0.85;
+}
+
+.mdo-minimap-marker.victim img {
+  filter: grayscale(0.7) brightness(0.6);
+}
+
+.mdo-minimap-marker.victim .victim-cross {
+  position: absolute;
+  font-size: 9px;
+  color: var(--red);
+  font-weight: 800;
+  text-shadow: 0 0 3px black;
+  pointer-events: none;
+  z-index: 11;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mdo-minimap-marker.spike-plant {
+  background: var(--gold);
+  border: 1px solid var(--text);
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 10px var(--gold);
+  z-index: 12;
+  transform: translate(-50%, -50%);
+}
+
+.mdo-minimap-marker.spike-defuse {
+  background: var(--cyan);
+  border: 1px solid var(--text);
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 10px var(--cyan);
+  z-index: 12;
+  transform: translate(-50%, -50%);
+}
+
+.mdo-minimap-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+}
+
+/* EVENT FEED TIMELINE */
+.mdo-round-events-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.mdo-feed-event-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+}
+
+.mdo-feed-event-item.kill {
+  border-left: 2px solid var(--line);
+}
+
+.mdo-feed-event-item.plant {
+  border-left: 2px solid var(--gold);
+  background: rgba(234, 179, 8, 0.02);
+}
+
+.mdo-feed-event-item.defuse {
+  border-left: 2px solid var(--cyan);
+  background: rgba(6, 182, 212, 0.02);
+}
+
+.mdo-feed-event-item .event-time {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+  width: 32px;
+  flex-shrink: 0;
+}
+
+.mdo-feed-event-item .event-details {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.mdo-feed-event-item .event-actor {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.mdo-feed-event-item .event-actor.killer.red {
+  color: var(--red);
+}
+
+.mdo-feed-event-item .event-actor.killer.blue {
+  color: var(--cyan);
+}
+
+.mdo-feed-event-item .event-actor.victim.red {
+  color: var(--red);
+}
+
+.mdo-feed-event-item .event-actor.victim.blue {
+  color: var(--cyan);
+}
+
+.mdo-feed-event-item .event-actor .agent-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+}
+
+.mdo-feed-event-item .event-verb {
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.text-win-soft {
+  color: var(--gold);
+}
+
+@media (max-width: 1000px) {
+  .mdo-round-visualizer-container {
+    flex-direction: column;
+  }
+  .mdo-round-minimap-side {
+    width: 100%;
+    max-width: 100%;
+  }
+}

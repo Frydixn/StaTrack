@@ -1,13 +1,11 @@
 import React from "react";
-import { BarChart2, Award, Users, Crosshair } from "lucide-react";
+import { BarChart2, Award, Users, Crosshair, Map } from "lucide-react";
 
 export default function Sidebar({ activeTab, setActiveTab, playerData }) {
-  const isNavDisabled = !playerData;
-  const tooltipText = isNavDisabled ? "Buscá un Riot ID primero" : undefined;
-
   const navItems = [
-    { id: "tracker", label: "Tracker", icon: BarChart2, desc: "Análisis y mejora" },
-    { id: "achievements", label: "Logros", icon: Award, desc: "Trayectoria completa" },
+    { id: "tracker", label: "Tracker", icon: BarChart2, desc: "Análisis y mejora", disabled: !playerData, tooltip: !playerData ? "Buscá un Riot ID primero" : undefined },
+    { id: "achievements", label: "Logros", icon: Award, desc: "Trayectoria completa", disabled: !playerData, tooltip: !playerData ? "Buscá un Riot ID primero" : undefined },
+    { id: "maps", label: "Mapas", icon: Map, desc: "Rotación y detalles", disabled: false, tooltip: undefined },
   ];
 
   return (
@@ -27,9 +25,9 @@ export default function Sidebar({ activeTab, setActiveTab, playerData }) {
             <button
               key={item.id}
               className={`sidebar-nav-btn ${isActive ? "active" : ""}`}
-              onClick={() => !isNavDisabled && setActiveTab(item.id)}
-              disabled={isNavDisabled}
-              title={tooltipText}
+              onClick={() => !item.disabled && setActiveTab(item.id)}
+              disabled={item.disabled}
+              title={item.tooltip}
             >
               <Icon className="sidebar-nav-icon" size={20} />
               <div className="sidebar-nav-text">
