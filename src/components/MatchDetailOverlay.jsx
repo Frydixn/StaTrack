@@ -29,13 +29,12 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
   const gameStart = metadata.game_start || 0;
   const gameLength = metadata.game_length || 0;
   const cluster = metadata.cluster || "Santiago";
-  const gameVersion = metadata.game_version ? metadata.game_version.split("-")[0] : "13.00";
 
   // Find player data to get agent and outcome details
   const allPlayers = match.players?.all_players || [];
   const me = allPlayers.find((p) => p.puuid === puuid) || {};
   const myTeam = me.team?.toLowerCase() || "blue";
-  
+
   // Game scores
   const scoreWon = match.teams?.[myTeam]?.rounds_won ?? 0;
   const scoreLost = match.teams?.[myTeam === "red" ? "blue" : "red"]?.rounds_won ?? 0;
@@ -58,7 +57,7 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
   const startTimeStr = gameStart ? new Date(gameStart * 1000).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false }) : "—";
   const endDateStr = gameStart && gameLength ? new Date((gameStart + gameLength) * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
   const endTimeStr = gameStart && gameLength ? new Date((gameStart + gameLength) * 1000).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false }) : "—";
-  
+
   const runtimeMin = Math.floor(gameLength / 60);
   const runtimeSec = gameLength % 60;
   const runtimeStr = gameLength ? `${runtimeMin}m ${runtimeSec}s` : "—";
@@ -110,7 +109,7 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                 </div>
               )}
             </div>
-            
+
             <div className="mdo-hero-info">
               <div className="mdo-hero-map font-oswald">{mapName}</div>
               <div className="mdo-hero-meta text-dim">
@@ -142,21 +141,17 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
             <span className="lbl text-dim">SERVER</span>
             <span className="val font-oswald">{cluster}</span>
           </div>
-          <div className="mdo-meta-cell" style={{ gridColumn: "span 2" }}>
-            <span className="lbl text-dim">VERSION</span>
-            <span className="val font-oswald">{gameVersion}</span>
-          </div>
         </div>
 
         {/* Tab Selection */}
         <div className="mdo-tab-nav">
-          <button 
+          <button
             className={`mdo-tab-link font-oswald ${activeTab === "scoreboard" ? "active" : ""}`}
             onClick={() => setActiveTab("scoreboard")}
           >
             SCOREBOARD
           </button>
-          <button 
+          <button
             className={`mdo-tab-link font-oswald ${activeTab === "performance" ? "active" : ""}`}
             onClick={() => setActiveTab("performance")}
           >
@@ -196,11 +191,11 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                         const kd = deaths > 0 ? (kills / deaths).toFixed(1) : kills.toFixed(1);
                         const rounds = metadata.rounds_played || 1;
                         const acs = Math.round((p.stats?.score || 0) / rounds);
-                        
+
                         const headshots = p.stats?.headshots || 0;
                         const totalShots = (p.stats?.headshots || 0) + (p.stats?.bodyshots || 0) + (p.stats?.legshots || 0);
                         const hs = totalShots > 0 ? Math.round((headshots / totalShots) * 100) : 0;
-                        
+
                         const dmg = p.damage_made || p.stats?.damage || 0;
                         const adr = Math.round(dmg / rounds);
 
@@ -277,11 +272,11 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                         const kd = deaths > 0 ? (kills / deaths).toFixed(1) : kills.toFixed(1);
                         const rounds = metadata.rounds_played || 1;
                         const acs = Math.round((p.stats?.score || 0) / rounds);
-                        
+
                         const headshots = p.stats?.headshots || 0;
                         const totalShots = (p.stats?.headshots || 0) + (p.stats?.bodyshots || 0) + (p.stats?.legshots || 0);
                         const hs = totalShots > 0 ? Math.round((headshots / totalShots) * 100) : 0;
-                        
+
                         const dmg = p.damage_made || p.stats?.damage || 0;
                         const adr = Math.round(dmg / rounds);
 
