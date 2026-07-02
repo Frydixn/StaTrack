@@ -3449,6 +3449,28 @@ footer {
   margin-bottom: 2px;
 }
 
+.timeline-round-box .round-kills-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0px;
+  line-height: 0.65;
+}
+
+.timeline-round-box .round-event-separator {
+  width: 14px;
+  height: 1px;
+  margin: 2px 0;
+}
+
+.timeline-round-box .round-event-separator.win {
+  background-color: rgba(16, 185, 129, 0.6);
+}
+
+.timeline-round-box .round-event-separator.loss {
+  background-color: rgba(239, 68, 68, 0.6);
+}
+
 .timeline-round-box .event-kill {
   color: var(--cyan);
   font-size: 10px;

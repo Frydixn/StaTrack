@@ -747,14 +747,26 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                           >
                             <span className="round-num">{roundNum}</span>
                             <div className="round-events">
-                              {Array.from({ length: roundKills }).map((_, kI) => (
-                                <span key={`k-${kI}`} className="event-kill">+</span>
-                              ))}
-                              {roundAssists > 0 && roundKills === 0 && (
-                                <span className="event-assist">-</span>
+                              {/* Top: Kills & Assists */}
+                              {(roundKills > 0 || (roundAssists > 0 && roundKills === 0)) && (
+                                <div className="round-kills-wrap">
+                                  {Array.from({ length: roundKills }).map((_, kI) => (
+                                    <span key={`k-${kI}`} className="event-kill">+</span>
+                                  ))}
+                                  {roundAssists > 0 && roundKills === 0 && (
+                                    <span className="event-assist">-</span>
+                                  )}
+                                </div>
                               )}
+
+                              {/* Separator line */}
+                              {(roundKills > 0 || (roundAssists > 0 && roundKills === 0)) && roundDeaths > 0 && (
+                                <div className={`round-event-separator ${isRoundWin ? "win" : "loss"}`} />
+                              )}
+
+                              {/* Bottom: Deaths */}
                               {roundDeaths > 0 && (
-                                <span className="event-death">•</span>
+                                <span className="event-death">+</span>
                               )}
                             </div>
                           </div>
