@@ -8,8 +8,22 @@ export default function MapsView() {
   const [selectedMap, setSelectedMap] = useState(null);
   const [showCallouts, setShowCallouts] = useState(true);
   const [showSites, setShowSites] = useState(true);
+  const [visibleSectors, setVisibleSectors] = useState({});
 
   const ACTIVE_MAPS = ["ascent", "split", "summit", "breeze", "lotus", "sunset", "haven"];
+
+  useEffect(() => {
+    if (selectedMap) {
+      const sectors = {};
+      (selectedMap.callouts || []).forEach((c) => {
+        const sectorKey = c.superRegionName || "General";
+        sectors[sectorKey] = true;
+      });
+      setVisibleSectors(sectors);
+    } else {
+      setVisibleSectors({});
+    }
+  }, [selectedMap]);
 
   useEffect(() => {
     fetch("https://valorant-api.com/v1/maps")
@@ -60,6 +74,34 @@ export default function MapsView() {
       };
     };
 
+    // Auto-detect spawn side to orient map from attacker's perspective (attacker spawn at the bottom)
+    const attackerCallout = calloutsList.find(c => 
+      c.regionName?.toLowerCase().includes("attacker") || 
+      c.superRegionName?.toLowerCase().includes("attacker")
+    );
+
+    let mapRotation = 0;
+    if (attackerCallout) {
+      const pct = convertCoords(attackerCallout.location.x, attackerCallout.location.y);
+      const dx = pct.x - 50;
+      const dy = pct.y - 50;
+      
+      if (Math.abs(dy) > Math.abs(dx)) {
+        if (dy < -10) {
+          // Attacker spawn is at the top, rotate 180deg to make it bottom
+          mapRotation = 180;
+        }
+      } else {
+        if (dx < -10) {
+          // Attacker spawn is on the left, rotate 90deg to make it bottom
+          mapRotation = 90;
+        } else if (dx > 10) {
+          // Attacker spawn is on the right, rotate 270deg to make it bottom
+          mapRotation = 270;
+        }
+      }
+    }
+
     return (
       <div className="maps-view-container">
         <div className="maps-header">
@@ -81,7 +123,10 @@ export default function MapsView() {
           {/* Left: Interactive Canvas */}
           <div className="map-detail-visual-column">
             {hasMinimap ? (
-              <div className="map-detail-canvas-wrapper">
+              <div 
+                className="map-detail-canvas-wrapper"
+                style={{ transform: `rotate(${mapRotation}deg)`, transition: "transform 0.3s ease" }}
+              >
                 <img 
                   src={activeMap.displayIcon} 
                   alt={`${activeMap.displayName} Tactical Layout`} 
@@ -91,6 +136,9 @@ export default function MapsView() {
                 {/* Callout Labels Overlay */}
                 {showCallouts && calloutsList.map((callout, cIdx) => {
                   if (callout.regionName === "Site") return null;
+                  const sectorKey = callout.superRegionName || "General";
+                  if (visibleSectors[sectorKey] === false) return null;
+
                   const pct = convertCoords(callout.location.x, callout.location.y);
                   const labelStr = callout.superRegionName 
                     ? `${callout.superRegionName} ${callout.regionName}` 
@@ -99,7 +147,11 @@ export default function MapsView() {
                     <div 
                       key={`c-${cIdx}`}
                       className="map-detail-callout-label font-oswald"
-                      style={{ left: `${pct.x}%`, top: `${pct.y}%` }}
+                      style={{ 
+                        left: `${pct.x}%`, 
+                        top: `${pct.y}%`,
+                        transform: `translate(-50%, -50%) rotate(${-mapRotation}deg)`
+                      }}
                     >
                       {labelStr.toUpperCase()}
                     </div>
@@ -109,13 +161,20 @@ export default function MapsView() {
                 {/* Bombsite Labels Overlay */}
                 {showSites && calloutsList.map((callout, cIdx) => {
                   if (callout.regionName !== "Site") return null;
+                  const sectorKey = callout.superRegionName || "A";
+                  if (visibleSectors[sectorKey] === false) return null;
+
                   const pct = convertCoords(callout.location.x, callout.location.y);
                   const siteLetter = callout.superRegionName || "A";
                   return (
                     <div 
                       key={`s-${cIdx}`}
                       className="map-detail-site-label font-oswald"
-                      style={{ left: `${pct.x}%`, top: `${pct.y}%` }}
+                      style={{ 
+                        left: `${pct.x}%`, 
+                        top: `${pct.y}%`,
+                        transform: `translate(-50%, -50%) rotate(${-mapRotation}deg)`
+                      }}
                     >
                       {siteLetter.toUpperCase()}
                     </div>
@@ -146,6 +205,23 @@ export default function MapsView() {
                   />
                   MOSTRAR CALLOUTS DE POSICIÓN
                 </label>
+
+                {/* Dynamic site-specific callout toggles */}
+                {showCallouts && Object.keys(visibleSectors).length > 0 && (
+                  <div className="map-sectors-toggles" style={{ paddingLeft: "16px", display: "flex", flexDirection: "column", gap: "8px", borderLeft: "1px solid rgba(255,255,255,0.05)", marginLeft: "6px" }}>
+                    {Object.keys(visibleSectors).sort().map((sector) => (
+                      <label key={sector} className="map-option-checkbox font-oswald" style={{ fontSize: "11px", opacity: 0.8, display: "flex", alignItems: "center", gap: "6px" }}>
+                        <input 
+                          type="checkbox" 
+                          checked={visibleSectors[sector]} 
+                          onChange={(e) => setVisibleSectors(prev => ({ ...prev, [sector]: e.target.checked }))}
+                        />
+                        SECTOR {sector.toUpperCase()}
+                      </label>
+                    ))}
+                  </div>
+                )}
+
                 <label className="map-option-checkbox font-oswald">
                   <input 
                     type="checkbox" 

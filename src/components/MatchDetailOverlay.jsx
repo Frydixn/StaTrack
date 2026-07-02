@@ -1137,7 +1137,8 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                               {/* Active/Alive Player Markers for Selected Kill */}
                               {selectedEvent && selectedEvent.type === "kill" && (() => {
                                 const k = selectedEvent.data;
-                                return (k.player_locations || []).map((pl, idx) => {
+                                const locList = k.player_locations_on_kill || k.player_locations || k.playerLocations || [];
+                                return locList.map((pl, idx) => {
                                   const plPuuid = pl.puuid || pl.player_puuid || pl.subject;
                                   const plPlayer = allPlayers.find(p => p.puuid === plPuuid);
                                   if (!plPlayer) return null;
@@ -1184,12 +1185,6 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                                 const victimCharacter = victimPlayer?.character || "";
                                 const victimIcon = agentIcons[victimCharacter.toLowerCase()];
                                 const victimTeam = victimPlayer?.team?.toLowerCase() || "red";
-                                
-                                const victimLocObj = k.player_locations?.find(pl => {
-                                  const plPuuid = pl.puuid || pl.player_puuid || pl.subject;
-                                  return plPuuid === k.victim_puuid;
-                                });
-                                const victimAngle = victimLocObj?.view_radiant || victimLocObj?.view_radians || victimLocObj?.view_angle || victimLocObj?.viewRadians || 0;
 
                                 return victimIcon ? (
                                   <div 
@@ -1199,10 +1194,6 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                                   >
                                     <img src={victimIcon} alt={victimCharacter} />
                                     <div className="victim-cross">❌</div>
-                                    <div 
-                                      className="player-direction-pointer" 
-                                      style={{ transform: `rotate(${victimAngle}rad)` }}
-                                    />
                                   </div>
                                 ) : null;
                               })()}
