@@ -9,7 +9,7 @@ export default function MapsView() {
   const [showCallouts, setShowCallouts] = useState(true);
   const [showSites, setShowSites] = useState(true);
 
-  const ACTIVE_MAPS = ["abyss", "ascent", "bind", "haven", "lotus", "split", "sunset"];
+  const ACTIVE_MAPS = ["ascent", "split", "summit", "breeze", "lotus", "sunset", "haven"];
 
   useEffect(() => {
     fetch("https://valorant-api.com/v1/maps")

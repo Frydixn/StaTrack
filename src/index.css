@@ -4436,3 +4436,9 @@ footer {
     width: 100%;
   }
 }
+
+.mdo-minimap-marker.selected-gold-marker {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 10px var(--gold) !important;
+  z-index: 20 !important;
+}

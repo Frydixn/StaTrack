@@ -1033,8 +1033,8 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                 const currentRound = match.rounds?.[selectedRoundTab - 1] || {};
                 const roundKills = (match.kills || []).filter(k => k.round === selectedRoundTab - 1);
                 
-                const plantEvent = currentRound.spike_plant_event;
-                const defuseEvent = currentRound.spike_defuse_event;
+                const plantEvent = currentRound.spike_plant_event || currentRound.plant_event || currentRound.plant_events;
+                const defuseEvent = currentRound.spike_defuse_event || currentRound.defuse_event || currentRound.defuse_events;
 
                 const activeMapObj = mapsData.find(
                   (m) => m.displayName?.toLowerCase() === mapName?.toLowerCase()
@@ -1049,7 +1049,7 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                   };
                 };
 
-                const isValidLoc = (loc) => loc && (loc.x !== undefined && loc.y !== undefined && (loc.x !== 0 || loc.y !== 0));
+                const isValidLoc = (loc) => loc && loc.x !== undefined && loc.y !== undefined && loc.x !== null && loc.y !== null;
 
                 const formatRoundTime = (msOrSec) => {
                   if (msOrSec === undefined || msOrSec === null) return "";
@@ -1065,7 +1065,7 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                 roundKills.forEach((k) => {
                   roundEventsList.push({
                     type: "kill",
-                    time: k.kill_time_in_round || 0,
+                    time: k.kill_time_in_round || k.kill_time || 0,
                     data: k
                   });
                 });
@@ -1073,7 +1073,7 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                 if (plantEvent) {
                   roundEventsList.push({
                     type: "plant",
-                    time: plantEvent.plant_time_in_round || 0,
+                    time: plantEvent.plant_time_in_round || plantEvent.plant_time || plantEvent.time || 0,
                     data: plantEvent
                   });
                 }
@@ -1081,7 +1081,7 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                 if (defuseEvent) {
                   roundEventsList.push({
                     type: "defuse",
-                    time: defuseEvent.defuse_time_in_round || 0,
+                    time: defuseEvent.defuse_time_in_round || defuseEvent.defuse_time || defuseEvent.time || 0,
                     data: defuseEvent
                   });
                 }
@@ -1120,16 +1120,14 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                                   const killerPct = convertCoords(killerLoc.x, killerLoc.y);
                                   const victimPct = convertCoords(victimLoc.x, victimLoc.y);
 
-                                  const killerTeamColor = allPlayers.find(p => p.puuid === k.killer_puuid)?.team?.toLowerCase() === "red" ? "var(--red)" : "var(--cyan)";
-
                                   return (
                                     <line 
                                       x1={killerPct.x}
                                       y1={killerPct.y}
                                       x2={victimPct.x}
                                       y2={victimPct.y}
-                                      stroke={killerTeamColor}
-                                      strokeWidth="1.5"
+                                      stroke="var(--gold)"
+                                      strokeWidth="2"
                                       strokeDasharray="2 1"
                                     />
                                   );
@@ -1140,22 +1138,28 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                               {selectedEvent && selectedEvent.type === "kill" && (() => {
                                 const k = selectedEvent.data;
                                 return (k.player_locations || []).map((pl, idx) => {
-                                  const plPlayer = allPlayers.find(p => p.puuid === pl.player_puuid);
+                                  const plPuuid = pl.puuid || pl.player_puuid || pl.subject;
+                                  const plPlayer = allPlayers.find(p => p.puuid === plPuuid);
                                   if (!plPlayer) return null;
 
                                   const character = plPlayer.character || "";
                                   const icon = agentIcons[character.toLowerCase()];
-                                  const pct = convertCoords(pl.location.x, pl.location.y);
-                                  const angle = pl.view_radiant || pl.view_radians || 0;
+                                  
+                                  const plLoc = pl.location || pl.player_location;
+                                  if (!plLoc || plLoc.x === undefined || plLoc.y === undefined) return null;
+
+                                  const pct = convertCoords(plLoc.x, plLoc.y);
+                                  const angle = pl.view_radiant || pl.view_radians || pl.view_angle || pl.viewRadians || 0;
                                   const team = plPlayer.team?.toLowerCase() || "blue";
 
                                   // Check if this player is the killer
-                                  const isKiller = pl.player_puuid === k.killer_puuid;
+                                  const isKiller = plPuuid === k.killer_puuid;
+                                  const highlightClass = isKiller ? "killer selected-gold-marker" : "";
 
                                   return (
                                     <div 
                                       key={`pl-${idx}`}
-                                      className={`mdo-minimap-marker player-alive ${team} ${isKiller ? "killer" : ""}`}
+                                      className={`mdo-minimap-marker player-alive ${team} ${highlightClass}`}
                                       style={{ left: `${pct.x}%`, top: `${pct.y}%` }}
                                       title={`${plPlayer.name} (${character})`}
                                     >
@@ -1180,35 +1184,37 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
                                 const victimCharacter = victimPlayer?.character || "";
                                 const victimIcon = agentIcons[victimCharacter.toLowerCase()];
                                 const victimTeam = victimPlayer?.team?.toLowerCase() || "red";
-                                const victimLocObj = k.player_locations?.find(pl => pl.player_puuid === k.victim_puuid);
-                                const victimAngle = victimLocObj?.view_radiant || victimLocObj?.view_radians || 0;
+                                
+                                const victimLocObj = k.player_locations?.find(pl => {
+                                  const plPuuid = pl.puuid || pl.player_puuid || pl.subject;
+                                  return plPuuid === k.victim_puuid;
+                                });
+                                const victimAngle = victimLocObj?.view_radiant || victimLocObj?.view_radians || victimLocObj?.view_angle || victimLocObj?.viewRadians || 0;
 
                                 return victimIcon ? (
                                   <div 
-                                    className={`mdo-minimap-marker victim ${victimTeam}`}
+                                    className={`mdo-minimap-marker victim selected-gold-marker ${victimTeam}`}
                                     style={{ left: `${victimPct.x}%`, top: `${victimPct.y}%` }}
                                     title={`${victimPlayer?.name || k.victim_display_name} (${victimCharacter})`}
                                   >
                                     <img src={victimIcon} alt={victimCharacter} />
                                     <div className="victim-cross">❌</div>
-                                    {victimLocObj && (
-                                      <div 
-                                        className="player-direction-pointer" 
-                                        style={{ transform: `rotate(${victimAngle}rad)` }}
-                                      />
-                                    )}
+                                    <div 
+                                      className="player-direction-pointer" 
+                                      style={{ transform: `rotate(${victimAngle}rad)` }}
+                                    />
                                   </div>
                                 ) : null;
                               })()}
 
                               {/* Plant Marker */}
                               {selectedEvent && selectedEvent.type === "plant" && (() => {
-                                const plantLoc = selectedEvent.data.plant_location || selectedEvent.data.location;
+                                const plantLoc = selectedEvent.data.plant_location || selectedEvent.data.location || selectedEvent.data.plant_events?.location;
                                 if (!isValidLoc(plantLoc)) return null;
                                 const plantPct = convertCoords(plantLoc.x, plantLoc.y);
                                 return (
                                   <div 
-                                    className="mdo-minimap-marker spike-plant"
+                                    className="mdo-minimap-marker spike-plant selected-gold-marker"
                                     style={{ left: `${plantPct.x}%`, top: `${plantPct.y}%` }}
                                     title="Spike Plantada"
                                   >
@@ -1219,12 +1225,12 @@ export default function MatchDetailOverlay({ match, puuid, onClose }) {
 
                               {/* Defuse Marker */}
                               {selectedEvent && selectedEvent.type === "defuse" && (() => {
-                                const defuseLoc = selectedEvent.data.defuse_location || selectedEvent.data.location;
+                                const defuseLoc = selectedEvent.data.defuse_location || selectedEvent.data.location || selectedEvent.data.defuse_events?.location;
                                 if (!isValidLoc(defuseLoc)) return null;
                                 const defusePct = convertCoords(defuseLoc.x, defuseLoc.y);
                                 return (
                                   <div 
-                                    className="mdo-minimap-marker spike-defuse"
+                                    className="mdo-minimap-marker spike-defuse selected-gold-marker"
                                     style={{ left: `${defusePct.x}%`, top: `${defusePct.y}%` }}
                                     title="Spike Desactivada"
                                   >
