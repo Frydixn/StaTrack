@@ -1741,24 +1741,44 @@ footer {
     width: 100%;
     height: auto;
     min-height: auto;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 8px 16px;
     border-right: none;
     border-bottom: 1px solid var(--line);
     position: sticky;
     top: 0;
     z-index: 100;
+    gap: 8px;
   }
 
   .sidebar-brand {
     margin-bottom: 0;
   }
 
+  .sidebar-search-container {
+    padding: 0 !important;
+    border-bottom: none !important;
+  }
+
+  .sidebar-search-container form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .sidebar-search-container input {
+    width: 100%;
+  }
+
+  .sidebar-search-container button {
+    width: 100%;
+    padding: 10px;
+  }
+
   .sidebar-nav {
     flex-direction: row;
-    gap: 8px;
+    gap: 4px;
     overflow-x: auto;
     scrollbar-width: none;
   }
@@ -1770,8 +1790,9 @@ footer {
   .sidebar-nav-btn {
     border-left: none;
     border-bottom: 2px solid transparent;
-    padding: 8px 12px;
+    padding: 6px 8px;
     border-radius: 4px 4px 0 0;
+    white-space: nowrap;
   }
 
   .sidebar-nav-btn.active {
@@ -3752,7 +3773,16 @@ footer {
   background: var(--bg-panel);
   border: 1px solid var(--line);
   border-radius: 6px;
-  min-height: calc(100vh - 200px);
+  height: calc(100vh - 32px); /* Adjust to fit in app-main */
+  overflow: hidden;
+}
+
+@media (max-width: 880px) {
+  .maps-view-container {
+    height: calc(100vh - 32px); /* Keep full height on mobile */
+    padding: 8px;
+    gap: 8px;
+  }
 }
 
 .maps-header {
@@ -4882,21 +4912,24 @@ footer {
 @media (max-width: 880px) {
   .map-detail-layout {
     flex-direction: column;
-    height: auto;
-    overflow: visible;
+    height: 100%; /* Take full remaining height on mobile */
+    overflow: hidden;
   }
   .map-detail-visual-column {
     padding: 8px;
     width: 100%;
+    flex: 0 0 auto;
+    min-height: 0;
   }
   .map-detail-canvas-wrapper {
     width: 100% !important;
-    height: auto !important;
+    max-height: 60vh; /* Don't take too much space */
     aspect-ratio: 1 / 1;
   }
   .map-detail-bottom-row {
     width: 100%;
     height: auto;
+    flex: 1;
     border-left: none;
     border-top: 1px solid var(--line);
   }

@@ -503,17 +503,31 @@ export default function MapsView() {
     if (!canvasRef.current) return { x: 50, y: 50 };
     const rect = canvasRef.current.getBoundingClientRect();
     
-    // 1. Apply inverse of zoom and panOffset
-    const relativeX = (e.clientX - rect.left - (panOffsetRef.current?.x || 0)) / (zoomScaleRef.current || 1);
-    const relativeY = (e.clientY - rect.top - (panOffsetRef.current?.y || 0)) / (zoomScaleRef.current || 1);
-
-    let px = (relativeX / rect.width) * 100;
-    let py = (relativeY / rect.height) * 100;
-
-    // Apply inverse of mapRotation
-    if (mapRotationRef.current === 90) { const tmp = px; px = 100 - py; py = tmp; }
-    else if (mapRotationRef.current === 180) { px = 100 - px; py = 100 - py; }
-    else if (mapRotationRef.current === 270) { const tmp = px; px = py; py = 100 - tmp; }
+    // First: Calculate mouse position relative to the CENTER of the canvas wrapper (to handle rotation properly)
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    let relX = e.clientX - centerX;
+    let relY = e.clientY - centerY;
+    
+    // Un-rotate the mouse coordinates to match the map's original orientation
+    const rotation = mapRotationRef.current * (Math.PI / 180);
+    // Rotate the relative position by negative rotation
+    const cos = Math.cos(-rotation);
+    const sin = Math.sin(-rotation);
+    const unrotatedX = relX * cos - relY * sin;
+    const unrotatedY = relX * sin + relY * cos;
+    
+    // Now convert back to position within the canvas (top-left origin)
+    const canvasX = unrotatedX + rect.width / 2;
+    const canvasY = unrotatedY + rect.height / 2;
+    
+    // Now apply inverse of zoom and pan offset
+    const mapX = (canvasX - panOffsetRef.current.x) / zoomScaleRef.current;
+    const mapY = (canvasY - panOffsetRef.current.y) / zoomScaleRef.current;
+    
+    let px = (mapX / rect.width) * 100;
+    let py = (mapY / rect.height) * 100;
+    
     return { x: Math.max(0, Math.min(100, px)), y: Math.max(0, Math.min(100, py)) };
   };
 
@@ -759,7 +773,7 @@ export default function MapsView() {
         </div>
 
         {/* Tactical board: Row arrangement with Map Canvas on the left and tools/agents in a vertical sidebar panel on the right */}
-        <div className="map-detail-layout" style={{ display: "flex", gap: "20px", alignItems: "flex-start" }}>
+        <div className="map-detail-layout" style={{ display: "flex", gap: "20px", flex: 1, minHeight: 0, overflow: "hidden" }}>
           {/* ── Left: Full size Canvas ── */}
           <div className="map-detail-visual-column">
             {hasMinimap ? (
@@ -769,10 +783,9 @@ export default function MapsView() {
                 style={{
                   transform: `rotate(${mapRotation}deg)`,
                   transition: "transform 0.3s ease",
-                  width: "min(calc(100vh - var(--topbar-height, 60px) - 32px), calc(100vw - 240px - 220px - 32px))",
-                  height: "min(calc(100vh - var(--topbar-height, 60px) - 32px), calc(100vw - 240px - 220px - 32px))",
-                  maxWidth: "100%",
-                  maxHeight: "100%",
+                  width: "100%",
+                  height: "100%",
+                  maxWidth: "min(calc(100vh - 150px), calc(100%))",
                   aspectRatio: "1 / 1",
                   overflow: "hidden",
                   position: "relative",
@@ -784,6 +797,41 @@ export default function MapsView() {
                 onMouseDown={onCanvasMouseDown}
                 onMouseMove={onCanvasMouseMove}
                 onMouseUp={onCanvasMouseUp}
+                onWheel={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const zoomIntensity = 0.12;
+                  const rect = canvasRef.current.getBoundingClientRect();
+                  
+                  // Un-rotate mouse coords just like in getCanvasCoords
+                  const centerX = rect.left + rect.width / 2;
+                  const centerY = rect.top + rect.height / 2;
+                  let relX = e.clientX - centerX;
+                  let relY = e.clientY - centerY;
+                  const rotation = mapRotationRef.current * (Math.PI / 180);
+                  const cos = Math.cos(-rotation);
+                  const sin = Math.sin(-rotation);
+                  const unrotatedX = relX * cos - relY * sin;
+                  const unrotatedY = relX * sin + relY * cos;
+                  const canvasX = unrotatedX + rect.width / 2;
+                  const canvasY = unrotatedY + rect.height / 2;
+                  
+                  const mapX = (canvasX - panOffsetRef.current.x) / zoomScaleRef.current;
+                  const mapY = (canvasY - panOffsetRef.current.y) / zoomScaleRef.current;
+                  
+                  const delta = e.deltaY < 0 ? 1 : -1;
+                  const newScale = Math.max(1, Math.min(8, zoomScaleRef.current + delta * zoomIntensity * zoomScaleRef.current));
+                  
+                  let newPanX = canvasX - mapX * newScale;
+                  let newPanY = canvasY - mapY * newScale;
+                  if (newScale === 1) {
+                    newPanX = 0;
+                    newPanY = 0;
+                  }
+                  
+                  setZoomScale(newScale);
+                  setPanOffset({ x: newPanX, y: newPanY });
+                }}
               >
                 <div
                   className="map-zoom-pan-container"
