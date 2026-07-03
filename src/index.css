@@ -1065,8 +1065,15 @@ footer {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .tracker-header-desc {
@@ -1239,7 +1246,8 @@ footer {
   gap: 20px;
 }
 
-.radar-chart-card, .trend-chart-card {
+.radar-chart-card,
+.trend-chart-card {
   background: var(--bg-panel);
   border: 1px solid var(--line);
   padding: 20px 24px;
@@ -1728,7 +1736,7 @@ footer {
   .app-shell {
     flex-direction: column;
   }
-  
+
   .sidebar {
     width: 100%;
     height: auto;
@@ -1743,47 +1751,47 @@ footer {
     top: 0;
     z-index: 100;
   }
-  
+
   .sidebar-brand {
     margin-bottom: 0;
   }
-  
+
   .sidebar-nav {
     flex-direction: row;
     gap: 8px;
     overflow-x: auto;
     scrollbar-width: none;
   }
-  
+
   .sidebar-nav::-webkit-scrollbar {
     display: none;
   }
-  
+
   .sidebar-nav-btn {
     border-left: none;
     border-bottom: 2px solid transparent;
     padding: 8px 12px;
     border-radius: 4px 4px 0 0;
   }
-  
+
   .sidebar-nav-btn.active {
     border-left: none;
     border-bottom: 2px solid var(--red);
     background: rgba(255, 70, 85, 0.08);
   }
-  
+
   .sidebar-nav-desc {
     display: none;
   }
-  
+
   .sidebar-mini-profile {
     display: none;
   }
-  
+
   .sidebar-footer {
     display: none;
   }
-  
+
   .topbar {
     position: static;
     padding: 16px;
@@ -1949,9 +1957,11 @@ footer {
 .match-win {
   border-left: 4px solid var(--green);
 }
+
 .match-loss {
   border-left: 4px solid var(--red);
 }
+
 .match-draw {
   border-left: 4px solid var(--text-dim);
 }
@@ -1959,9 +1969,11 @@ footer {
 .text-win {
   color: var(--green) !important;
 }
+
 .text-loss {
   color: var(--red) !important;
 }
+
 .text-draw {
   color: var(--text-dim) !important;
 }
@@ -2181,26 +2193,26 @@ footer {
     align-items: flex-start;
     gap: 12px;
   }
-  
+
   .day-header-right {
     width: 100%;
     justify-content: space-between;
     border-top: 1px solid var(--line);
     padding-top: 8px;
   }
-  
+
   .match-history-card {
     flex-direction: column;
     align-items: stretch;
     gap: 14px;
   }
-  
+
   .card-badges-section {
     flex-direction: row;
     flex-wrap: wrap;
     padding: 0;
   }
-  
+
   .card-stats-section {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -2208,11 +2220,11 @@ footer {
     border-top: 1px solid var(--line);
     padding-top: 12px;
   }
-  
+
   .stat-col {
     align-items: flex-start;
   }
-  
+
   .stat-col.rank-info {
     grid-column: span 3;
     border-bottom: 1px dashed var(--line);
@@ -2709,13 +2721,13 @@ footer {
   .player-profile-bar {
     flex-direction: column;
   }
-  
+
   .ppb-left-column {
     border-right: none;
     border-bottom: 1px solid var(--line);
     width: 100%;
   }
-  
+
   .ppb-agents {
     width: 100%;
     padding: 20px;
@@ -2726,21 +2738,21 @@ footer {
   .ppb-left-top-row {
     flex-direction: column;
   }
-  
+
   .ppb-identity {
     border-right: none;
     border-bottom: 1px solid var(--line);
     width: 100%;
   }
-  
+
   .ppb-rank {
     width: 100%;
   }
-  
+
   .ppb-perf-grid-wide {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .rank-col.line-separator {
     border-left: 1px solid var(--line);
     padding-left: 12px;
@@ -2781,13 +2793,23 @@ footer {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideInRight {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
 }
 
 .mdo-header {
@@ -2857,7 +2879,7 @@ footer {
   overflow: hidden;
   border: 1.5px solid var(--line);
   background: rgba(0, 0, 0, 0.4);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
   flex-shrink: 0;
 }
 
@@ -2970,7 +2992,7 @@ footer {
 
 .mdo-tab-link:hover {
   color: var(--text);
-  background: rgba(255,255,255,0.01);
+  background: rgba(255, 255, 255, 0.01);
 }
 
 .mdo-tab-link.active {
@@ -3023,7 +3045,7 @@ footer {
 
 .mdo-score-pill {
   font-size: 10px;
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
   color: var(--text);
   padding: 2px 8px;
   border-radius: 12px;
@@ -3123,13 +3145,13 @@ footer {
 .mdo-perf-summary-card {
   border: 1px solid var(--line);
   border-radius: 4px;
-  background: rgba(0,0,0,0.1);
+  background: rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
 
 .mdo-perf-summary-card .card-header {
   padding: 12px 20px;
-  background: rgba(0,0,0,0.2);
+  background: rgba(0, 0, 0, 0.2);
   border-bottom: 1px solid var(--line);
   font-size: 12px;
   font-weight: 600;
@@ -3169,7 +3191,7 @@ footer {
 .mdo-perf-metric-bar .bar-line-bg {
   flex: 1;
   height: 6px;
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -3192,6 +3214,7 @@ footer {
     width: 100%;
     min-width: 100%;
   }
+
   .mdo-meta-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -4261,6 +4284,7 @@ footer {
   .mdo-round-visualizer-container {
     flex-direction: column;
   }
+
   .mdo-round-minimap-side {
     width: 100%;
     max-width: 100%;
@@ -4271,44 +4295,17 @@ footer {
    Map Details Overlay and Options Styles
    ========================================== */
 
-.map-detail-layout {
-  display: flex;
-  gap: 24px;
-  margin-top: 16px;
-}
-
-.map-detail-visual-column {
-  flex: 1.2;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.map-detail-info-column {
-  flex: 0.8;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
 .map-detail-canvas-wrapper {
   position: relative;
   width: 100%;
-  max-width: 500px;
   aspect-ratio: 1 / 1;
   background-color: rgba(15, 25, 35, 0.4);
-  border: 1.5px solid var(--line);
-  border-radius: 6px;
-  overflow: hidden;
-  box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.8), 0 4px 15px rgba(0, 0, 0, 0.4);
 }
 
 .map-detail-canvas-img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   display: block;
 }
 
@@ -4429,9 +4426,11 @@ footer {
   .map-detail-layout {
     flex-direction: column;
   }
+
   .map-detail-visual-column {
     width: 100%;
   }
+
   .map-detail-info-column {
     width: 100%;
   }
@@ -4441,4 +4440,469 @@ footer {
   border-color: var(--gold) !important;
   box-shadow: 0 0 10px var(--gold) !important;
   z-index: 20 !important;
+}
+
+/* Strategy Planner Styling */
+.planner-agents-picker {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 0 8px 0;
+  scrollbar-width: thin;
+}
+
+.planner-agents-picker::-webkit-scrollbar {
+  height: 4px;
+}
+
+.planner-agents-picker::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 2px;
+}
+
+.planner-agent-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  background: rgba(15, 25, 35, 0.6);
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.planner-agent-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.2s;
+}
+
+.planner-agent-btn:hover {
+  border-color: var(--cyan);
+}
+
+.planner-agent-btn:hover img {
+  transform: scale(1.1);
+}
+
+.planner-agent-btn.active {
+  border-color: var(--cyan);
+  box-shadow: 0 0 8px var(--cyan);
+  transform: scale(1.05);
+}
+
+/* Abilities selector */
+.planner-abilities-picker {
+  display: flex;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.planner-ability-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  border: 1.5px solid var(--line);
+  background: rgba(15, 25, 35, 0.8);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  transition: all 0.2s ease;
+}
+
+.planner-ability-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.planner-ability-btn:hover {
+  border-color: var(--gold);
+  background: rgba(15, 25, 35, 0.9);
+}
+
+.planner-ability-btn.active {
+  border-color: var(--gold);
+  background: rgba(234, 179, 8, 0.1);
+  box-shadow: 0 0 8px var(--gold);
+}
+
+/* Placed strategy markers on canvas */
+.planner-marker {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  cursor: grab;
+  user-select: none;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.planner-marker.dragging {
+  cursor: grabbing !important;
+  z-index: 35;
+}
+
+.planner-marker.agent {
+  background: #0f1923;
+  border-radius: 50%;
+  border: 2px solid var(--cyan);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.planner-marker.ability {
+  /* Custom shapes like walls or AoE circles */
+}
+
+/* Marker delete button on hover */
+.marker-delete-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--red);
+  color: white;
+  border: 1px solid white;
+  font-size: 8px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 40;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  padding: 0;
+  line-height: 1;
+}
+
+.planner-marker:hover .marker-delete-btn {
+  display: flex;
+}
+
+.planner-marker img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+/* Wall shapes (Sage, Viper, Phoenix, Neon) */
+.marker-wall {
+  width: 100%;
+  height: 100%;
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  border-radius: 3px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.6), inset 0 0 6px rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s;
+  opacity: 0.85;
+}
+
+.marker-wall:hover {
+  filter: brightness(1.2);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.8);
+}
+
+/* Smokes & Area of Effect circles (Omen, Brim, Jett, Sage slow) */
+.marker-aoe-circle {
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: box-shadow 0.2s;
+  width: 100%;
+  height: 100%;
+}
+
+.marker-aoe-circle img.aoe-icon {
+  width: 40%;
+  height: 40%;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.8);
+  background: rgba(15, 25, 35, 0.8);
+  object-fit: contain;
+  pointer-events: none;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+/* Selected Tool Info Banner */
+.planner-selected-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.planner-deselect-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 0 4px;
+  transition: color 0.2s;
+}
+
+.planner-deselect-btn:hover {
+  color: var(--red);
+}
+
+/* SVG Ability handles and previews */
+.ability-handle {
+  transition: r 0.15s ease, stroke-width 0.15s ease, fill 0.15s ease;
+}
+
+.ability-handle:hover {
+  fill: var(--cyan);
+  stroke: #ffffff;
+  r: 1.6;
+}
+
+.ability-handle.radius-handle {
+  cursor: ew-resize;
+}
+
+/* ═══════════════════════════════════════════
+   TACTICAL PLANNER — NEW STYLES
+═══════════════════════════════════════════ */
+
+.agent-pick-btn {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid var(--line);
+  background: var(--bg-card);
+  border-radius: 4px;
+  cursor: grab;
+  overflow: hidden;
+  transition: border-color 0.15s, transform 0.1s;
+}
+.agent-pick-btn:hover { border-color: var(--text-dim); transform: scale(1.08); }
+.agent-pick-btn:active { cursor: grabbing; }
+
+.ability-pick-btn {
+  width: 44px;
+  height: 44px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  background: var(--bg-card);
+  border-radius: 4px;
+  cursor: grab;
+  overflow: hidden;
+  position: relative;
+  transition: border-color 0.15s, transform 0.1s;
+}
+.ability-pick-btn:hover { border-color: var(--red); transform: scale(1.08); }
+.ability-pick-btn:active { cursor: grabbing; }
+
+.ability-archetype-badge {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  font-size: 8px;
+  line-height: 1;
+  background: rgba(0, 0, 0, 0.75);
+  border-radius: 2px;
+  padding: 1px 2px;
+  pointer-events: none;
+}
+
+.agent-marker {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  user-select: none;
+  transition: box-shadow 0.15s;
+}
+.agent-marker:hover { z-index: 20; }
+
+.cone-ability-container:hover .ability-hover-controls {
+  display: flex !important;
+}
+
+.tool-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  color: var(--text-dim);
+  font-family: 'Oswald', sans-serif;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.tool-btn:hover { border-color: var(--text-dim); color: var(--text); }
+.tool-btn.active { border-color: var(--red); color: var(--red); background: rgba(255, 70, 85, 0.08); }
+
+.color-pill {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 0.15s, transform 0.1s;
+  flex-shrink: 0;
+  padding: 0;
+}
+.color-pill.active { border-color: white; transform: scale(1.15); }
+.color-pill:hover:not(.active) { transform: scale(1.1); }
+
+.context-menu {
+  position: fixed;
+  z-index: 1000;
+  background: var(--bg-panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55);
+  min-width: 140px;
+}
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 3px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: var(--text);
+  transition: background 0.1s;
+  text-align: left;
+}
+.context-menu-item:hover { background: rgba(255, 255, 255, 0.06); }
+
+.role-filter-btn {
+  padding: 4px 8px;
+  background: none;
+  border: 1px solid var(--line);
+  color: var(--text-dim);
+  font-family: 'Oswald', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: border-color 0.15s, color 0.15s;
+}
+.role-filter-btn.active { border-color: var(--red); color: var(--red); }
+
+.undo-redo-btn {
+  flex: 1;
+  padding: 6px 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  color: var(--text-dim);
+  font-family: 'Oswald', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.undo-redo-btn:not(:disabled):hover { border-color: var(--text-dim); color: var(--text); }
+.undo-redo-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ─── MAP DETAIL ROW LAYOUT ─── */
+.map-detail-layout {
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+  height: calc(100vh - var(--topbar-height, 60px));
+  overflow: hidden;
+}
+
+.map-detail-visual-column {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: 16px;
+  overflow: hidden;
+}
+
+.map-detail-canvas-wrapper {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  width: min(calc(100vh - var(--topbar-height, 60px) - 32px), calc(100vw - 240px - 300px - 32px));
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.map-detail-bottom-row {
+  width: 220px;
+  flex-shrink: 0;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg-panel);
+  border-left: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.map-detail-bottom-row > div {
+  border-bottom: 1px solid var(--line);
+  padding: 10px;
+}
+
+/* Responsive: mobile column fallback */
+@media (max-width: 880px) {
+  .map-detail-layout {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+  .map-detail-visual-column {
+    padding: 8px;
+    width: 100%;
+  }
+  .map-detail-canvas-wrapper {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 1 / 1;
+  }
+  .map-detail-bottom-row {
+    width: 100%;
+    height: auto;
+    border-left: none;
+    border-top: 1px solid var(--line);
+  }
+}
+
+.maps-header {
+  min-height: 52px;
+  box-sizing: border-box;
 }

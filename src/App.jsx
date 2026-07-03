@@ -201,29 +201,7 @@ export default function App() {
             }
           }
 
-          if (!snapshot.stats.trend && matches.length > 0) {
-            const trendMatches = matches.slice(0, 15).reverse();
-            const trend = [];
-            let winsCount = 0;
-            trendMatches.forEach((m, idx) => {
-              const me = m.players?.all_players?.find((p) => p.puuid === player.puuid);
-              if (!me) return;
-              const kills = me.stats?.kills || 0;
-              const deaths = me.stats?.deaths || 0;
-              const kd = deaths > 0 ? Number((kills / deaths).toFixed(2)) : Number(kills.toFixed(2));
-              const hsCount = me.stats?.headshots || 0;
-              const totalShots = (me.stats?.headshots || 0) + (me.stats?.bodyshots || 0) + (me.stats?.legshots || 0);
-              const hs = totalShots > 0 ? Math.round((hsCount / totalShots) * 100) : 0;
-              const myTeam = me.team?.toLowerCase();
-              const won = m.teams?.[myTeam]?.has_won ?? false;
-              if (won) winsCount++;
-              const winrate = Math.round((winsCount / (idx + 1)) * 100);
-              const mapName = m.metadata?.map || "Unknown";
-              const label = mapName.substring(0, 3);
-              trend.push({ kd, hs, winrate, label });
-            });
-            snapshot.stats.trend = trend;
-          }
+          snapshot.stats.trend = snapshot.stats.trend || [];
 
           setPlayerData({
             account: { 
@@ -271,29 +249,7 @@ export default function App() {
               console.warn("Error leyendo partidas de Supabase para fallback de error:", e.message);
             }
 
-            if (!snapshot.stats.trend && matches.length > 0) {
-              const trendMatches = matches.slice(0, 15).reverse();
-              const trend = [];
-              let winsCount = 0;
-              trendMatches.forEach((m, idx) => {
-                const me = m.players?.all_players?.find((p) => p.puuid === player.puuid);
-                if (!me) return;
-                const kills = me.stats?.kills || 0;
-                const deaths = me.stats?.deaths || 0;
-                const kd = deaths > 0 ? Number((kills / deaths).toFixed(2)) : Number(kills.toFixed(2));
-                const hsCount = me.stats?.headshots || 0;
-                const totalShots = (me.stats?.headshots || 0) + (me.stats?.bodyshots || 0) + (me.stats?.legshots || 0);
-                const hs = totalShots > 0 ? Math.round((hsCount / totalShots) * 100) : 0;
-                const myTeam = me.team?.toLowerCase();
-                const won = m.teams?.[myTeam]?.has_won ?? false;
-                if (won) winsCount++;
-                const winrate = Math.round((winsCount / (idx + 1)) * 100);
-                const mapName = m.metadata?.map || "Unknown";
-                const label = mapName.substring(0, 3);
-                trend.push({ kd, hs, winrate, label });
-              });
-              snapshot.stats.trend = trend;
-            }
+            snapshot.stats.trend = snapshot.stats.trend || [];
 
             setPlayerData({
               account: { 
@@ -353,6 +309,23 @@ export default function App() {
     setFriendError("");
   };
 
+  const getLatestActLabel = (matches) => {
+    if (!matches || matches.length === 0) return "E11A4";
+    const meta = matches[0]?.metadata;
+    if (!meta) return "E11A4";
+    // season puede ser objeto {id, short} o string o null
+    if (meta.season && typeof meta.season === "object") {
+      return (meta.season.short || meta.season.id || "E11A4").toUpperCase();
+    }
+    if (meta.season && typeof meta.season === "string") {
+      return meta.season.toUpperCase();
+    }
+    if (meta.season_id && typeof meta.season_id === "string") {
+      return meta.season_id.toUpperCase();
+    }
+    return "E11A4";
+  };
+
   const filteredAchievements = playerData
     ? playerData.achievements.filter((ach) => {
       if (activeFilter === "unlocked" && !ach.unlocked) return false;
@@ -367,85 +340,89 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} playerData={playerData} />
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} playerData={playerData} onSearch={handleSearch} loading={loading} />
       
       <div className="app-main">
         <div className="noise-bar"></div>
-        <Header onSearch={handleSearch} loading={loading} />
 
-        <main>
-          {loading && (
-            <div className="state-msg loading-msg">
-              <div className="loading-spinner"></div>
-              Sincronizando expediente competitivo de combate...
-              <span style={{ fontSize: 13, color: "var(--text-dim)" }}>
-                Esto puede tardar unos segundos — guardando partidas nuevas en Supabase
-              </span>
-            </div>
-          )}
+        {activeTab === "maps" ? (
+          !loading && !error && <MapsView />
+        ) : (
+          <>
+            <main>
+              {loading && (
+                <div className="state-msg loading-msg">
+                  <div className="loading-spinner"></div>
+                  Sincronizando expediente competitivo de combate...
+                  <span style={{ fontSize: 13, color: "var(--text-dim)" }}>
+                    Esto puede tardar unos segundos — guardando partidas nuevas en Supabase
+                  </span>
+                </div>
+              )}
 
-          {error && <div className="state-msg error">{error}</div>}
+              {error && <div className="state-msg error">{error}</div>}
 
-          {!loading && !error && activeTab === "maps" && (
-            <MapsView />
-          )}
+              {!loading && !error && !playerData && (
+                <div className="state-msg">Esperando un Riot ID para empezar a escanear...</div>
+              )}
 
-          {!loading && !error && activeTab !== "maps" && !playerData && (
-            <div className="state-msg">Esperando un Riot ID para empezar a escanear...</div>
-          )}
+              {!loading && !error && playerData && (
+                <div className="results-container">
+                  <PlayerProfileBar
+                    account={playerData.account}
+                    stats={playerData.stats}
+                    latestAct={getLatestActLabel(playerData.matches)}
+                    matches={playerData.matches}
+                    summary={playerData.summary}
+                    onRefresh={handleRefresh}
+                    refreshing={refreshing}
+                    onGoToTracker={() => setActiveTab("tracker")}
+                  />
 
-          {!loading && !error && activeTab !== "maps" && playerData && (
-            <div className="results-container">
-              <PlayerProfileBar
-                account={playerData.account}
-                stats={playerData.stats}
-                latestAct={playerData.matches?.[0]?.metadata?.season || { short: playerData.matches?.[0]?.metadata?.season_id || "E11A4" }}
-                matches={playerData.matches}
-                summary={playerData.summary}
-                onRefresh={handleRefresh}
-                refreshing={refreshing}
-                onGoToTracker={() => setActiveTab("tracker")}
-              />
-
-              {activeTab === "tracker" && (
-                <>
-                  {playerData.stats.agentsByMap && Object.keys(playerData.stats.agentsByMap).length > 0 && (
-                    <MapAgentsPanel agentsByMap={playerData.stats.agentsByMap} />
+                  {activeTab === "tracker" && (
+                    <>
+                      {playerData.stats.agentsByMap && Object.keys(playerData.stats.agentsByMap).length > 0 && (
+                        <MapAgentsPanel agentsByMap={playerData.stats.agentsByMap} />
+                      )}
+                      <TrackerView playerData={playerData} />
+                    </>
                   )}
-                  <TrackerView playerData={playerData} />
-                </>
-              )}
 
-              {activeTab === "achievements" && (
-                <>
-                  <ComparePanel
-                    playerData={playerData}
-                    friendData={friendData}
-                    friendLoading={friendLoading}
-                    friendError={friendError}
-                    compareMode={compareMode}
-                    onFriendSearch={handleFriendSearch}
-                    onClose={handleCloseCompare}
-                  />
-                  <Filters
-                    activeFilter={activeFilter}
-                    onFilterChange={setActiveFilter}
-                    searchTerm={searchTerm}
-                    onSearchTermChange={setSearchTerm}
-                  />
-                  <AchievementsGrid
-                    achievements={filteredAchievements}
-                    friendAchievements={compareMode && friendData ? friendData.achievements : null}
-                  />
-                </>
-              )}
-            </div>
-          )}
-        </main>
+                  {activeTab === "compare" && (
+                    <ComparePanel
+                      playerData={playerData}
+                      friendData={friendData}
+                      friendLoading={friendLoading}
+                      friendError={friendError}
+                      compareMode={compareMode}
+                      onFriendSearch={handleFriendSearch}
+                      onClose={handleCloseCompare}
+                    />
+                  )}
 
-        <footer>
-          Proyecto independiente, no afiliado a Riot Games. Valorant es marca registrada de Riot Games, Inc.
-        </footer>
+                  {activeTab === "achievements" && (
+                    <>
+                      <Filters
+                        activeFilter={activeFilter}
+                        onFilterChange={setActiveFilter}
+                        searchTerm={searchTerm}
+                        onSearchTermChange={setSearchTerm}
+                      />
+                      <AchievementsGrid
+                        achievements={filteredAchievements}
+                        friendAchievements={compareMode && friendData ? friendData.achievements : null}
+                      />
+                    </>
+                  )}
+                </div>
+              )}
+            </main>
+
+            <footer>
+              Proyecto independiente, no afiliado a Riot Games. Valorant es marca registrada de Riot Games, Inc.
+            </footer>
+          </>
+        )}
       </div>
     </div>
   );

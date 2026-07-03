@@ -151,7 +151,7 @@ export default function PlayerProfileBar({
   const winrateClass = winrate >= benchmark.winrate ? "text-win font-oswald" : "text-loss font-oswald";
 
   // Act / Season tag
-  const currentActTag = latestAct?.season?.short || stats.mmr?.current_data?.season_id?.toUpperCase() || "E11A4";
+  const currentActTag = typeof latestAct === "string" ? latestAct : (latestAct?.season?.short || latestAct?.short || stats.mmr?.current_data?.season_id?.toUpperCase() || "E11A4");
 
   // 4. Dynamic calculation of Agent and Map statistics from matches
   const computedAgents = (() => {
