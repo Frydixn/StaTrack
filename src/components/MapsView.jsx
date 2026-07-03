@@ -1151,7 +1151,7 @@ export default function MapsView() {
           </div>
 
           {/* ── Right Column: Control tools and agent selection (organized in a sidebar panel stack) ── */}
-          <div className="map-detail-bottom-row" style={{ display: "flex", flexDirection: "column", gap: "12px", width: "220px" }}>
+          <div className="map-detail-bottom-row" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
 
             {/* PANEL 1: Herramientas */}
             <div className="mdo-perf-panel-card">
@@ -1209,7 +1209,7 @@ export default function MapsView() {
                   ))}
                 </div>
                 {/* Agent grid */}
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", maxHeight: "110px", overflowY: "auto" }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", maxHeight: "140px", overflowY: "auto" }}>
                   {filteredAgents.map(agent => (
                     <button key={agent.uuid}
                       className="agent-pick-btn"
