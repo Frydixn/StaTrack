@@ -10,6 +10,7 @@ import ComparePanel from "./components/ComparePanel";
 import Sidebar from "./components/Sidebar";
 import TrackerView from "./components/TrackerView";
 import MapsView from "./components/MapsView";
+import CompareView from "./components/CompareView";
 import { supabase } from "./services/supabaseClient";
 import {
   getAccount, getMMR, getMMRHistory,
@@ -362,11 +363,19 @@ export default function App() {
 
               {error && <div className="state-msg error">{error}</div>}
 
-              {!loading && !error && !playerData && (
+              {!loading && !error && activeTab === "compare" && (
+                <CompareView
+                  playerData={playerData}
+                  onSearch={handleSearch}
+                  loadProfile={loadOrSyncPlayerProfile}
+                />
+              )}
+
+              {!loading && !error && activeTab !== "compare" && !playerData && (
                 <div className="state-msg">Esperando un Riot ID para empezar a escanear...</div>
               )}
 
-              {!loading && !error && playerData && (
+              {!loading && !error && activeTab !== "compare" && playerData && (
                 <div className="results-container">
                   <PlayerProfileBar
                     account={playerData.account}

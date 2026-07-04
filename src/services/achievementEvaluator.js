@@ -1,6 +1,6 @@
 import ACHIEVEMENTS from "./achievements.js";
 
-const RANK_ORDER = [
+export const RANK_ORDER = [
   "Iron 1", "Iron 2", "Iron 3",
   "Bronze 1", "Bronze 2", "Bronze 3",
   "Silver 1", "Silver 2", "Silver 3",

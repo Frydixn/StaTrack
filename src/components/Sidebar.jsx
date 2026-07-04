@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { BarChart2, Award, Users, Crosshair, Map } from "lucide-react";
+import { BarChart2, Award, Users, Crosshair, Map, Swords } from "lucide-react";
 
 export default function Sidebar({ activeTab, setActiveTab, playerData, onSearch, loading }) {
   const [inputValue, setInputValue] = useState("");
@@ -24,6 +24,7 @@ export default function Sidebar({ activeTab, setActiveTab, playerData, onSearch,
   const navItems = [
     { id: "tracker", label: "Tracker", icon: BarChart2, desc: "Análisis y mejora", disabled: !playerData, tooltip: !playerData ? "Buscá un Riot ID primero" : undefined },
     { id: "achievements", label: "Logros", icon: Award, desc: "Trayectoria completa", disabled: !playerData, tooltip: !playerData ? "Buscá un Riot ID primero" : undefined },
+    { id: "compare", label: "Comparar", icon: Swords, desc: "vs amigos y pros", disabled: false, tooltip: undefined },
     { id: "maps", label: "Mapas", icon: Map, desc: "Rotación y detalles", disabled: false, tooltip: undefined },
   ];
 

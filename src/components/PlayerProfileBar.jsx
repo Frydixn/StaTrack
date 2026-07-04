@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { 
-  User, Shield, Activity, MapPin, Copy, Check, 
-  RefreshCw, ChevronDown, ChevronUp, Map 
+import {
+  User, Shield, Activity, MapPin, Copy, Check,
+  RefreshCw, ChevronDown, ChevronUp, Map
 } from "lucide-react";
 import { RANK_BENCHMARKS, getRankGroup } from "../services/trackerEngine";
 
-export default function PlayerProfileBar({ 
-  account, stats, latestAct, matches, onRefresh, refreshing, onGoToTracker 
+export default function PlayerProfileBar({
+  account, stats, latestAct, matches, onRefresh, refreshing, onGoToTracker
 }) {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState("agents");
@@ -45,12 +45,12 @@ export default function PlayerProfileBar({
     if (!name) return 0;
     const clean = name.toLowerCase().trim();
     if (clean.includes("unranked")) return 0;
-    
+
     const ranks = [
-      "iron", "bronze", "silver", "gold", "platinum", 
+      "iron", "bronze", "silver", "gold", "platinum",
       "diamond", "ascendant", "immortal", "radiant"
     ];
-    
+
     let base = 0;
     for (let i = 0; i < ranks.length; i++) {
       if (clean.startsWith(ranks[i])) {
@@ -78,7 +78,7 @@ export default function PlayerProfileBar({
     let peakSeasonName = "";
 
     const bySeason = mmr.by_season || mmr.seasonal;
-    
+
     if (bySeason && typeof bySeason === "object" && !Array.isArray(bySeason)) {
       Object.entries(bySeason).forEach(([seasonKey, data]) => {
         const tierId = data.final_rank || 0;
@@ -113,7 +113,7 @@ export default function PlayerProfileBar({
   const currentRankIcon = stats.mmr?.current_data?.images?.large || getRankIconUrl(currentRankTier);
   const currentRR = stats.mmr?.current_data?.ranking_in_tier ?? stats.actStats?.rr ?? 0;
   const currentELO = stats.mmr?.current_data?.elo ?? stats.actStats?.elo ?? 0;
-  
+
   // Last session RR change
   const mmrChange = stats.mmr?.current_data?.mmr_change_to_last_game ?? stats.actStats?.mmrChange ?? 0;
   const rrChangeText = mmrChange > 0 ? `+${mmrChange}` : mmrChange < 0 ? `${mmrChange}` : "0";
@@ -128,14 +128,14 @@ export default function PlayerProfileBar({
   // 3. Performance overview math & benchmark checks
   const numMatches = stats.matchesPlayed || 0;
   const rawMatches = matches || [];
-  
+
   // Calculate average damage per round (ADR)
   let totalRoundsPlayed = 0;
   rawMatches.forEach((m) => {
     totalRoundsPlayed += m.metadata?.rounds_played || 0;
   });
-  const adr = totalRoundsPlayed > 0 
-    ? Math.round(stats.totalDamage / totalRoundsPlayed) 
+  const adr = totalRoundsPlayed > 0
+    ? Math.round(stats.totalDamage / totalRoundsPlayed)
     : (numMatches > 0 ? Math.round(stats.totalDamage / (numMatches * 20)) : 0);
 
   const kd = stats.kdRatio || 0;
@@ -193,6 +193,54 @@ export default function PlayerProfileBar({
     })).sort((a, b) => b.games - a.games);
   })();
 
+  const AGENT_ROLES = {
+    "jett": "Duelist", "raze": "Duelist", "neon": "Duelist", "yoru": "Duelist", "phoenix": "Duelist", "reyna": "Duelist", "iso": "Duelist",
+    "fade": "Initiator", "sova": "Initiator", "breach": "Initiator", "skye": "Initiator", "kay/o": "Initiator", "kayo": "Initiator", "gekko": "Initiator",
+    "omen": "Controller", "brimstone": "Controller", "viper": "Controller", "astra": "Controller", "harbor": "Controller", "clove": "Controller", "miks": "Controller",
+    "sage": "Sentinel", "cypher": "Sentinel", "killjoy": "Sentinel", "chamber": "Sentinel", "deadlock": "Sentinel", "vyse": "Sentinel"
+  };
+
+  const computedRoles = (() => {
+    if (!rawMatches.length) return [];
+    const data = {};
+    rawMatches.forEach((m) => {
+      const me = m.players?.all_players?.find((p) => p.puuid === account.puuid);
+      if (!me) return;
+      const agentName = (me.character || "Unknown").toLowerCase();
+      const role = AGENT_ROLES[agentName] || me.role?.displayName || "Other";
+
+      const myTeam = me.team?.toLowerCase();
+      const won = m.teams?.[myTeam]?.has_won ?? false;
+      const kills = me.stats?.kills || 0;
+      const deaths = me.stats?.deaths || 0;
+      const dmg = me.damage_made || me.stats?.damage || 0;
+      const hsCount = me.stats?.headshots || 0;
+      const shots = (me.stats?.headshots || 0) + (me.stats?.bodyshots || 0) + (me.stats?.legshots || 0);
+      const rounds = m.metadata?.rounds_played || 1;
+
+      if (!data[role]) {
+        data[role] = { games: 0, wins: 0, kills: 0, deaths: 0, dmg: 0, hs: 0, shots: 0, rounds: 0 };
+      }
+      data[role].games += 1;
+      if (won) data[role].wins += 1;
+      data[role].kills += kills;
+      data[role].deaths += deaths;
+      data[role].dmg += dmg;
+      data[role].hs += hsCount;
+      data[role].shots += shots;
+      data[role].rounds += rounds;
+    });
+
+    return Object.entries(data).map(([name, s]) => ({
+      name,
+      games: s.games,
+      winrate: Math.round((s.wins / s.games) * 100),
+      kd: s.deaths > 0 ? Number((s.kills / s.deaths).toFixed(2)) : Number(s.kills.toFixed(2)),
+      adr: s.rounds > 0 ? Math.round(s.dmg / s.rounds) : 0,
+      hs: s.shots > 0 ? Math.round((s.hs / s.shots) * 100) : 0,
+    })).sort((a, b) => b.games - a.games);
+  })();
+
   const computedMaps = (() => {
     if (!rawMatches.length) return [];
     const data = {};
@@ -237,11 +285,11 @@ export default function PlayerProfileBar({
   })();
 
   const cardSmallUrl = account.card?.small || stats.accountCard?.small;
-  const puuidTruncated = account.puuid 
-    ? `${account.puuid.slice(0, 8)}...${account.puuid.slice(-4)}` 
+  const puuidTruncated = account.puuid
+    ? `${account.puuid.slice(0, 8)}...${account.puuid.slice(-4)}`
     : "";
 
-  const itemsToShow = activeTab === "agents" ? computedAgents : computedMaps;
+  const itemsToShow = activeTab === "agents" ? computedAgents : activeTab === "roles" ? computedRoles : computedMaps;
   const hasEnoughData = itemsToShow.length > 0;
   const visibleItems = expanded ? itemsToShow : itemsToShow.slice(0, 4);
 
@@ -256,7 +304,7 @@ export default function PlayerProfileBar({
               <User size={12} className="ppb-section-icon" />
               <span>PLAYER IDENTITY</span>
             </div>
-            
+
             <div className="ppb-identity-card-row">
               <div className="ppb-player-card">
                 {cardSmallUrl ? (
@@ -267,15 +315,15 @@ export default function PlayerProfileBar({
                   </div>
                 )}
               </div>
-              
+
               <div className="ppb-player-info">
                 <div className="ppb-username font-oswald">
                   {account.name}
                   <span className="tag">#{account.tag}</span>
-                  <button 
-                    onClick={onRefresh} 
-                    className="ppb-refresh-btn" 
-                    disabled={refreshing} 
+                  <button
+                    onClick={onRefresh}
+                    className="ppb-refresh-btn"
+                    disabled={refreshing}
                     title="Actualizar estadísticas"
                   >
                     <RefreshCw size={12} className={refreshing ? "spin-animation" : ""} />
@@ -374,7 +422,7 @@ export default function PlayerProfileBar({
               <span className={winrateClass}>{winrate}%</span>
               <span className="lbl">WIN %</span>
             </div>
-            
+
             {/* EXTRA TACTICAL STATS */}
             <div className="perf-cell">
               <span className="val font-oswald">{stats.totalKills}/{stats.totalDeaths}/{stats.totalAssists}</span>
@@ -403,19 +451,25 @@ export default function PlayerProfileBar({
         <div className="ppb-section-title" style={{ display: "flex", justifyContent: "space-between", width: "100%", alignItems: "center", marginBottom: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
             <Map size={12} className="ppb-section-icon" />
-            <span>AGENTS & MAPS</span>
+            <span>STATS</span>
           </div>
           <span className="ppb-games-count font-oswald">{numMatches} GAMES</span>
         </div>
 
         <div className="ppb-agents-tab-nav">
-          <button 
+          <button
             className={`tab-link font-oswald ${activeTab === "agents" ? "active" : ""}`}
             onClick={() => { setActiveTab("agents"); setExpanded(false); }}
           >
             AGENTS
           </button>
-          <button 
+          <button
+            className={`tab-link font-oswald ${activeTab === "roles" ? "active" : ""}`}
+            onClick={() => { setActiveTab("roles"); setExpanded(false); }}
+          >
+            ROLES
+          </button>
+          <button
             className={`tab-link font-oswald ${activeTab === "maps" ? "active" : ""}`}
             onClick={() => { setActiveTab("maps"); setExpanded(false); }}
           >
@@ -432,7 +486,7 @@ export default function PlayerProfileBar({
             <table className="ppb-table">
               <thead>
                 <tr>
-                  <th>{activeTab === "agents" ? "AGENT" : "MAP"}</th>
+                  <th>{activeTab === "agents" ? "AGENT" : activeTab === "roles" ? "ROLE" : "MAP"}</th>
                   <th style={{ textAlign: "right" }}>WIN%</th>
                   <th style={{ textAlign: "right" }}>K/D</th>
                   <th style={{ textAlign: "right" }}>ADR</th>
@@ -478,8 +532,8 @@ export default function PlayerProfileBar({
             </table>
 
             {itemsToShow.length > 4 && (
-              <div 
-                className="ppb-view-more font-oswald" 
+              <div
+                className="ppb-view-more font-oswald"
                 onClick={() => setExpanded(!expanded)}
               >
                 {expanded ? (
