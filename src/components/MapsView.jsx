@@ -1151,10 +1151,10 @@ export default function MapsView() {
           </div>
 
           {/* ── Right Column: Control tools and agent selection (organized in a sidebar panel stack) ── */}
-          <div className="map-detail-bottom-row" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <div className="map-detail-bottom-row">
 
             {/* PANEL 1: Herramientas */}
-            <div className="mdo-perf-panel-card">
+            <div className="mdo-perf-panel-card" style={{ flex: "none" }}>
               <div className="panel-header font-oswald"><span>HERRAMIENTAS</span></div>
               <div className="panel-body" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 {/* Tool buttons */}
@@ -1197,19 +1197,19 @@ export default function MapsView() {
             </div>
 
             {/* PANEL 2: Agentes */}
-            <div className="mdo-perf-panel-card">
+            <div className="mdo-perf-panel-card" style={{ flex: "1 1 auto", minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
               <div className="panel-header font-oswald"><span>AGENTES</span></div>
-              <div className="panel-body" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <div className="panel-body" style={{ display: "flex", flexDirection: "column", gap: "10px", flex: "1 1 auto", overflow: "hidden", minHeight: 0 }}>
                 {/* Role filter */}
-                <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", flexShrink: 0 }}>
                   {ROLE_FILTERS.map(r => (
                     <button key={r} className={`role-filter-btn ${agentRoleFilter === r ? "active" : ""}`} onClick={() => setAgentRoleFilter(r)}>
                       {r === "ALL" ? "TODOS" : r === "Controller" ? "CTRL" : r === "Duelist" ? "DUEL" : r === "Sentinel" ? "CENT" : "INIC"}
                     </button>
                   ))}
                 </div>
-                {/* Agent grid */}
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", maxHeight: "140px", overflowY: "auto" }}>
+                {/* Agent grid - 3 per row - uses remaining space */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "6px", overflowY: "auto", paddingRight: "4px", flex: "1 1 auto", minHeight: 0 }}>
                   {filteredAgents.map(agent => (
                     <button key={agent.uuid}
                       className="agent-pick-btn"
@@ -1217,7 +1217,7 @@ export default function MapsView() {
                       onDragStart={e => onAgentDragStart(e, agent)}
                       onDragEnd={onPanelDragEnd}
                       onClick={() => setSelectedAgentUuid(prev => prev === agent.uuid ? null : agent.uuid)}
-                      style={{ outline: selectedAgentUuid === agent.uuid ? "2px solid var(--red)" : "none", outlineOffset: "1px" }}
+                      style={{ outline: selectedAgentUuid === agent.uuid ? "2px solid var(--red)" : "none", outlineOffset: "1px", width: "100%", aspectRatio: "1/1" }}
                       title={agent.displayName}
                     >
                       <img src={agent.displayIcon} alt={agent.displayName} style={{ width: "100%", height: "100%", borderRadius: "4px", objectFit: "cover" }} />
@@ -1229,7 +1229,7 @@ export default function MapsView() {
 
             {/* PANEL 3: Habilidades (conditional) */}
             {selectedAgent && (
-              <div className="mdo-perf-panel-card">
+              <div className="mdo-perf-panel-card" style={{ flex: "1 1 auto", overflowY: "auto", minHeight: 0 }}>
                 <div className="panel-header font-oswald" style={{ justifyContent: "space-between" }}>
                   <span>{selectedAgent.displayName.toUpperCase()} — HABILIDADES</span>
                   <button onClick={() => setSelectedAgentUuid(null)}
@@ -1265,6 +1265,10 @@ export default function MapsView() {
                   </div>
                 </div>
               </div>
+            )}
+            {/* Fill remaining space to keep consistent total height */}
+            {!selectedAgent && (
+              <div style={{ flex: "1 1 auto", minHeight: 0 }}></div>
             )}
           </div>
         </div>

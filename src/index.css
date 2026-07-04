@@ -25,8 +25,8 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: 'Rajdhani', sans-serif;
-  min-height: 100vh;
-  overflow-y: scroll;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* Scrollbar estilizado */
@@ -50,7 +50,8 @@ body {
 .app-container {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .noise-bar {
@@ -1488,7 +1489,8 @@ footer {
 .app-shell {
   display: flex;
   flex-direction: row;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .app-main {
@@ -1496,6 +1498,7 @@ footer {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  overflow: hidden;
 }
 
 .sidebar {
@@ -1510,6 +1513,13 @@ footer {
   flex-direction: column;
   flex-shrink: 0;
   z-index: 100;
+  overflow: hidden;
+}
+
+.sidebar-nav {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .sidebar-brand {
@@ -3588,6 +3598,7 @@ footer {
   font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.5px;
+  color: var(--text);
 }
 
 .mdo-perf-panel-card .panel-body {
@@ -4768,17 +4779,17 @@ footer {
 .tool-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 7px 10px;
+  gap: 4px;
+  padding: 4px 6px;
   background: var(--bg-card);
   border: 1px solid var(--line);
   color: var(--text-dim);
   font-family: 'Oswald', sans-serif;
-  font-size: 10px;
-  letter-spacing: 1px;
+  font-size: 9px;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
   cursor: pointer;
-  border-radius: 3px;
+  border-radius: 2px;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
   white-space: nowrap;
 }
@@ -4831,13 +4842,13 @@ footer {
 .context-menu-item:hover { background: rgba(255, 255, 255, 0.06); }
 
 .role-filter-btn {
-  padding: 4px 8px;
+  padding: 3px 6px;
   background: none;
   border: 1px solid var(--line);
   color: var(--text-dim);
   font-family: 'Oswald', sans-serif;
-  font-size: 10px;
-  letter-spacing: 0.5px;
+  font-size: 9px;
+  letter-spacing: 0.4px;
   text-transform: uppercase;
   cursor: pointer;
   border-radius: 2px;
@@ -4847,16 +4858,16 @@ footer {
 
 .undo-redo-btn {
   flex: 1;
-  padding: 6px 8px;
+  padding: 4px 6px;
   background: var(--bg-card);
   border: 1px solid var(--line);
   color: var(--text-dim);
   font-family: 'Oswald', sans-serif;
-  font-size: 10px;
-  letter-spacing: 0.5px;
+  font-size: 9px;
+  letter-spacing: 0.4px;
   text-transform: uppercase;
   cursor: pointer;
-  border-radius: 3px;
+  border-radius: 2px;
   transition: background 0.15s, border-color 0.15s;
 }
 .undo-redo-btn:not(:disabled):hover { border-color: var(--text-dim); color: var(--text); }
@@ -4906,6 +4917,11 @@ footer {
 .map-detail-bottom-row > div {
   border-bottom: 1px solid var(--line);
   padding: 10px;
+  flex-shrink: 0;
+}
+
+.map-detail-bottom-row > div:last-child {
+  border-bottom: none;
 }
 
 /* Responsive: mobile column fallback */
