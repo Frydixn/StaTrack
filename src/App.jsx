@@ -339,7 +339,7 @@ export default function App() {
     : [];
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${activeTab === "maps" ? "maps-active" : ""}`}>
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} playerData={playerData} onSearch={handleSearch} loading={loading} />
       
       <div className="app-main">

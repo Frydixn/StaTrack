@@ -25,8 +25,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: 'Rajdhani', sans-serif;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
 }
 
 /* Scrollbar estilizado */
@@ -50,6 +49,12 @@ body {
 .app-container {
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Solo bloquear el scroll global si estamos en la vista de mapas */
+body:has(.maps-active),
+.maps-active {
   height: 100vh;
   overflow: hidden;
 }
@@ -1498,6 +1503,12 @@ footer {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Bloquear scroll en la columna principal si mapas está activo */
+.maps-active .app-main {
   overflow: hidden;
 }
 
