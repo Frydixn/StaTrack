@@ -153,8 +153,19 @@ export function aggregateStats(account, mmr, matches) {
     const won = match.teams?.[myTeam?.toLowerCase()]?.has_won;
     if (won) stats.totalWins += 1;
 
-    if (me.stats.kills >= 20 && meta.rounds_played && me.stats.kills / meta.rounds_played >= 1.5) {
-      stats.aces += 1;
+    // Contar bajas por ronda hechas por mí en esta partida para detectar Aces (5 bajas en una ronda)
+    const myKillsInRound = {};
+    const matchKills = match.kills || [];
+    for (const k of matchKills) {
+      if (k.killer_puuid === account.puuid) {
+        const roundNum = k.round;
+        myKillsInRound[roundNum] = (myKillsInRound[roundNum] || 0) + 1;
+      }
+    }
+    for (const killsCount of Object.values(myKillsInRound)) {
+      if (killsCount >= 5) {
+        stats.aces += 1;
+      }
     }
 
     const maxScore = Math.max(...players.map((p) => p.stats.score || 0));

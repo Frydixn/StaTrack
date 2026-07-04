@@ -388,20 +388,17 @@ export default function App() {
                     </>
                   )}
 
-                  {activeTab === "compare" && (
-                    <ComparePanel
-                      playerData={playerData}
-                      friendData={friendData}
-                      friendLoading={friendLoading}
-                      friendError={friendError}
-                      compareMode={compareMode}
-                      onFriendSearch={handleFriendSearch}
-                      onClose={handleCloseCompare}
-                    />
-                  )}
-
                   {activeTab === "achievements" && (
                     <>
+                      <ComparePanel
+                        playerData={playerData}
+                        friendData={friendData}
+                        friendLoading={friendLoading}
+                        friendError={friendError}
+                        compareMode={compareMode}
+                        onFriendSearch={handleFriendSearch}
+                        onClose={handleCloseCompare}
+                      />
                       <Filters
                         activeFilter={activeFilter}
                         onFilterChange={setActiveFilter}
