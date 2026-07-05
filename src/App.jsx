@@ -127,9 +127,15 @@ export default function App() {
     setSearchTerm("");
     setActiveTab("tracker");
 
+    let player = null;
     try {
-      const { data: player } = await axios.get(`${API_BASE}/api/db/player/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`);
+      const { data } = await axios.get(`${API_BASE}/api/db/player/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`);
+      player = data;
+    } catch (e) {
+      console.warn("No se pudo leer el jugador de la base de datos proxy:", e.message);
+    }
 
+    try {
       let shouldLoadFromSnapshot = false;
       if (player) {
         const lastUpdated = player.last_updated ? new Date(player.last_updated).getTime() : 0;
