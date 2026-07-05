@@ -11,7 +11,8 @@ import Sidebar from "./components/Sidebar";
 import TrackerView from "./components/TrackerView";
 import MapsView from "./components/MapsView";
 import CompareView from "./components/CompareView";
-import { supabase } from "./services/supabaseClient";
+import axios from "axios";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 import {
   getAccount, getMMR, getMMRHistory,
   getFullMatchHistory, aggregateStats, buildActStats,
@@ -26,15 +27,12 @@ async function loadOrSyncPlayerProfile(name, tag) {
 
   let existingMatchIdsSet = new Set();
   try {
-    const { data: storedMatchIdsRaw, error: dbErr } = await supabase
-      .from("player_matches")
-      .select("match_id")
-      .eq("puuid", puuid);
-    if (!dbErr && storedMatchIdsRaw) {
+    const { data: storedMatchIdsRaw } = await axios.get(`${API_BASE}/api/db/match-ids/${encodeURIComponent(puuid)}`);
+    if (storedMatchIdsRaw) {
       existingMatchIdsSet = new Set(storedMatchIdsRaw.map((row) => row.match_id));
     }
   } catch (err) {
-    console.warn("No se pudieron leer match_ids de Supabase (posible tabla inexistente o RLS):", err.message);
+    console.warn("No se pudieron leer match_ids del proxy backend:", err.message);
   }
 
   try {
@@ -45,16 +43,13 @@ async function loadOrSyncPlayerProfile(name, tag) {
 
   let matches = [];
   try {
-    const { data: allStoredMatchesRaw, error: dbErr } = await supabase
-      .from("player_matches")
-      .select("match_data")
-      .eq("puuid", puuid);
-    if (!dbErr && allStoredMatchesRaw) {
+    const { data: allStoredMatchesRaw } = await axios.get(`${API_BASE}/api/db/matches/${encodeURIComponent(puuid)}`);
+    if (allStoredMatchesRaw) {
       matches = allStoredMatchesRaw.map((row) => row.match_data) || [];
       matches.sort((a, b) => (b.metadata?.game_start || 0) - (a.metadata?.game_start || 0));
     }
   } catch (err) {
-    console.warn("No se pudieron leer partidas de Supabase:", err.message);
+    console.warn("No se pudieron leer partidas del proxy backend:", err.message);
   }
 
   if (matches.length === 0) {
@@ -94,31 +89,17 @@ async function loadOrSyncPlayerProfile(name, tag) {
   try {
     await saveToSupabase(result);
   } catch (dbErr) {
-    console.warn("No se pudo guardar el snapshot en Supabase:", dbErr.message);
+    console.warn("No se pudo guardar el snapshot en el proxy backend:", dbErr.message);
   }
 
   return result;
 }
 
 async function saveToSupabase(playerData) {
-  const { account, stats, achievements } = playerData;
   try {
-    await supabase.from("players").upsert({
-      puuid: account.puuid, name: account.name, tag: account.tag,
-      region: account.region, account_level: account.account_level,
-      last_updated: new Date().toISOString(),
-    });
-    await supabase.from("player_stats_snapshots").insert({ puuid: account.puuid, stats });
-
-    const unlockedRows = achievements
-      .filter((a) => a.unlocked)
-      .map((a) => ({ puuid: account.puuid, achievement_id: a.id }));
-    if (unlockedRows.length > 0) {
-      await supabase.from("player_achievements")
-        .upsert(unlockedRows, { onConflict: "puuid,achievement_id", ignoreDuplicates: true });
-    }
+    await axios.post(`${API_BASE}/api/db/save-profile`, playerData);
   } catch (dbErr) {
-    console.warn("Error guardando en Supabase:", dbErr.message);
+    console.warn("Error guardando perfil en el proxy backend:", dbErr.message);
   }
 }
 
@@ -147,9 +128,7 @@ export default function App() {
     setActiveTab("tracker");
 
     try {
-      const { data: player } = await supabase
-        .from("players").select("*")
-        .ilike("name", name).ilike("tag", tag).maybeSingle();
+      const { data: player } = await axios.get(`${API_BASE}/api/db/player/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`);
 
       let shouldLoadFromSnapshot = false;
       if (player) {
@@ -161,11 +140,7 @@ export default function App() {
       }
 
       if (shouldLoadFromSnapshot) {
-        const { data: snapshot } = await supabase
-          .from("player_stats_snapshots").select("stats")
-          .eq("puuid", player.puuid)
-          .order("created_at", { ascending: false })
-          .limit(1).maybeSingle();
+        const { data: snapshot } = await axios.get(`${API_BASE}/api/db/stats-snapshot/${encodeURIComponent(player.puuid)}`);
 
         if (snapshot?.stats) {
           const achievements = evaluateAchievements(snapshot.stats);
@@ -173,10 +148,7 @@ export default function App() {
           
           let matches = [];
           try {
-            const { data: storedMatchesRaw } = await supabase
-              .from("player_matches")
-              .select("match_data")
-              .eq("puuid", player.puuid);
+            const { data: storedMatchesRaw } = await axios.get(`${API_BASE}/api/db/matches/${encodeURIComponent(player.puuid)}`);
             if (storedMatchesRaw && storedMatchesRaw.length > 0) {
               matches = storedMatchesRaw.map((row) => row.match_data) || [];
               matches.sort((a, b) => (b.metadata?.game_start || 0) - (a.metadata?.game_start || 0));
@@ -195,7 +167,7 @@ export default function App() {
                   match_id: m.metadata?.matchid || m.metadata?.match_id,
                   match_data: m,
                 }));
-                await supabase.from("player_matches").upsert(rowsToInsert, { onConflict: "puuid,match_id", ignoreDuplicates: true });
+                await axios.post(`${API_BASE}/api/db/save-matches`, { rows: rowsToInsert });
               }
             } catch (err) {
               console.warn("No se pudieron obtener partidas de API para el snapshot:", err.message);
@@ -226,11 +198,7 @@ export default function App() {
       } catch (apiErr) {
         console.warn("Fallo al obtener datos frescos de la API en búsqueda:", apiErr.message);
         if (player) {
-          const { data: snapshot } = await supabase
-            .from("player_stats_snapshots").select("stats")
-            .eq("puuid", player.puuid)
-            .order("created_at", { ascending: false })
-            .limit(1).maybeSingle();
+          const { data: snapshot } = await axios.get(`${API_BASE}/api/db/stats-snapshot/${encodeURIComponent(player.puuid)}`);
 
           if (snapshot?.stats) {
             const achievements = evaluateAchievements(snapshot.stats);
@@ -238,10 +206,7 @@ export default function App() {
             
             let matches = [];
             try {
-              const { data: storedMatchesRaw } = await supabase
-                .from("player_matches")
-                .select("match_data")
-                .eq("puuid", player.puuid);
+              const { data: storedMatchesRaw } = await axios.get(`${API_BASE}/api/db/matches/${encodeURIComponent(player.puuid)}`);
               if (storedMatchesRaw && storedMatchesRaw.length > 0) {
                 matches = storedMatchesRaw.map((row) => row.match_data) || [];
                 matches.sort((a, b) => (b.metadata?.game_start || 0) - (a.metadata?.game_start || 0));
