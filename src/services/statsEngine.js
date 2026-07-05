@@ -1,5 +1,5 @@
 import axios from "axios";
-import { supabase } from "./supabaseClient";
+
 
 const API_KEY = import.meta.env.VITE_HENRIK_API_KEY || "";
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
@@ -276,12 +276,10 @@ export async function syncPlayerMatches(region, name, tag, puuid, existingMatchI
       match_data: m,
     }));
 
-    const { error } = await supabase
-      .from("player_matches")
-      .upsert(rowsToInsert, { onConflict: "puuid,match_id", ignoreDuplicates: true });
-
-    if (error) {
-      console.warn("Error al guardar partidas en Supabase:", error.message);
+    try {
+      await axios.post(`${API_BASE}/api/db/matches`, rowsToInsert);
+    } catch (err) {
+      console.warn("Error al guardar partidas en el proxy backend:", err.message);
     }
   }
 
