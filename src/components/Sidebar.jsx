@@ -33,7 +33,7 @@ export default function Sidebar({ activeTab, setActiveTab, playerData, onSearch,
       <div className="sidebar-brand">
         <Crosshair className="sidebar-brand-icon" size={20} />
         <span className="sidebar-brand-text">
-          STA<span className="brand-red">TRACK  </span>
+          Track<span className="brand-red">Trics  </span>
         </span>
       </div>
 
