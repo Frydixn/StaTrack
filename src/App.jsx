@@ -27,9 +27,9 @@ async function loadOrSyncPlayerProfile(name, tag) {
 
   let existingMatchIdsSet = new Set();
   try {
-    const { data: storedMatchIdsRaw } = await axios.get(`${API_BASE}/api/db/match-ids/${encodeURIComponent(puuid)}`);
-    if (storedMatchIdsRaw) {
-      existingMatchIdsSet = new Set(storedMatchIdsRaw.map((row) => row.match_id));
+    const { data: storedMatchesRaw } = await axios.get(`${API_BASE}/api/db/matches/${encodeURIComponent(puuid)}`);
+    if (storedMatchesRaw && Array.isArray(storedMatchesRaw)) {
+      existingMatchIdsSet = new Set(storedMatchesRaw.map((row) => row.match_id));
     }
   } catch (err) {
     console.warn("No se pudieron leer match_ids del proxy backend:", err.message);
@@ -96,8 +96,23 @@ async function loadOrSyncPlayerProfile(name, tag) {
 }
 
 async function saveToSupabase(playerData) {
+  const { account, stats, achievements } = playerData;
   try {
-    await axios.post(`${API_BASE}/api/db/save-profile`, playerData);
+    await axios.post(`${API_BASE}/api/db/player`, {
+      puuid: account.puuid,
+      name: account.name,
+      tag: account.tag,
+      region: account.region,
+      account_level: account.account_level
+    });
+    await axios.post(`${API_BASE}/api/db/stats`, { puuid: account.puuid, stats });
+    
+    const unlockedRows = achievements
+      .filter((a) => a.unlocked)
+      .map((a) => ({ puuid: account.puuid, achievement_id: a.id }));
+    if (unlockedRows.length > 0) {
+      await axios.post(`${API_BASE}/api/db/achievements`, unlockedRows);
+    }
   } catch (dbErr) {
     console.warn("Error guardando perfil en el proxy backend:", dbErr.message);
   }
@@ -128,19 +143,29 @@ export default function App() {
     setActiveTab("tracker");
 
     try {
-      const { data: player } = await axios.get(`${API_BASE}/api/db/player/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`);
+      let player = null;
+      try {
+        const { data } = await axios.get(`${API_BASE}/api/db/player/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`);
+        player = data;
+      } catch (err) {
+        if (err.response?.status !== 404) {
+          throw err;
+        }
+      }
 
       let shouldLoadFromSnapshot = false;
-      if (player) {
+      if (player && player.puuid) {
         const lastUpdated = player.last_updated ? new Date(player.last_updated).getTime() : 0;
         const cacheDuration = 5 * 60 * 1000; // 5 minutes
         if (Date.now() - lastUpdated < cacheDuration) {
           shouldLoadFromSnapshot = true;
         }
+      } else {
+        player = null; // Tratar objeto vacío {} como null
       }
 
       if (shouldLoadFromSnapshot) {
-        const { data: snapshot } = await axios.get(`${API_BASE}/api/db/stats-snapshot/${encodeURIComponent(player.puuid)}`);
+        const { data: snapshot } = await axios.get(`${API_BASE}/api/db/stats/${encodeURIComponent(player.puuid)}`);
 
         if (snapshot?.stats) {
           const achievements = evaluateAchievements(snapshot.stats);
@@ -167,7 +192,7 @@ export default function App() {
                   match_id: m.metadata?.matchid || m.metadata?.match_id,
                   match_data: m,
                 }));
-                await axios.post(`${API_BASE}/api/db/save-matches`, { rows: rowsToInsert });
+                await axios.post(`${API_BASE}/api/db/matches`, rowsToInsert);
               }
             } catch (err) {
               console.warn("No se pudieron obtener partidas de API para el snapshot:", err.message);
@@ -198,7 +223,7 @@ export default function App() {
       } catch (apiErr) {
         console.warn("Fallo al obtener datos frescos de la API en búsqueda:", apiErr.message);
         if (player) {
-          const { data: snapshot } = await axios.get(`${API_BASE}/api/db/stats-snapshot/${encodeURIComponent(player.puuid)}`);
+          const { data: snapshot } = await axios.get(`${API_BASE}/api/db/stats/${encodeURIComponent(player.puuid)}`);
 
           if (snapshot?.stats) {
             const achievements = evaluateAchievements(snapshot.stats);
