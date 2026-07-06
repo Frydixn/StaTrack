@@ -1,26 +1,23 @@
 import axios from "axios";
 
-const API_KEY = import.meta.env.VITE_HENRIK_API_KEY || "";
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
-const HENRIK_BASE = "https://api.henrikdev.xyz";
-const headers = API_KEY ? { Authorization: API_KEY } : {};
 
 export async function getAccount(name, tag) {
-  const url = `${HENRIK_BASE}/valorant/v1/account/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`;
-  const { data } = await axios.get(url, { headers });
+  const url = `${API_BASE}/api/account/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`;
+  const { data } = await axios.get(url);
   return data.data;
 }
 
 export async function getMMR(region, name, tag) {
-  const url = `${HENRIK_BASE}/valorant/v2/mmr/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`;
-  const { data } = await axios.get(url, { headers });
+  const url = `${API_BASE}/api/mmr/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`;
+  const { data } = await axios.get(url);
   return data.data;
 }
 
 export async function getMMRHistory(region, name, tag) {
   try {
-    const url = `${HENRIK_BASE}/valorant/v1/mmr-history/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`;
-    const { data } = await axios.get(url, { headers });
+    const url = `${API_BASE}/api/mmr-history/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`;
+    const { data } = await axios.get(url);
     return data.data || [];
   } catch {
     return [];
@@ -28,8 +25,8 @@ export async function getMMRHistory(region, name, tag) {
 }
 
 export async function getMatchHistory(region, name, tag, size = 20) {
-  const url = `${HENRIK_BASE}/valorant/v3/matches/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}?size=${size}&mode=competitive`;
-  const { data } = await axios.get(url, { headers });
+  const url = `${API_BASE}/api/matches/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}?size=${size}&mode=competitive`;
+  const { data } = await axios.get(url);
   const rawMatches = data.data || [];
   return rawMatches.filter((m) => m.metadata?.mode?.toLowerCase() === "competitive");
 }
@@ -41,8 +38,8 @@ export async function getFullMatchHistory(region, name, tag) {
 
   while (page <= maxPages) {
     try {
-      const url = `${HENRIK_BASE}/valorant/v3/matches/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}?size=20&page=${page}&mode=competitive`;
-      const { data } = await axios.get(url, { headers });
+      const url = `${API_BASE}/api/matches/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}?size=20&page=${page}&mode=competitive`;
+      const { data } = await axios.get(url);
       const batch = data.data || [];
       if (batch.length === 0) break;
       allMatches.push(...batch);
