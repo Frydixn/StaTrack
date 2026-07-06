@@ -2,6 +2,8 @@ import axios from "axios";
 
 const API_KEY = import.meta.env.VITE_HENRIK_API_KEY || "";
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const HENRIK_BASE = "https://api.henrikdev.xyz";
+const headers = API_KEY ? { Authorization: API_KEY } : {};
 
 export async function getAccount(name, tag) {
   const url = `${HENRIK_BASE}/valorant/v1/account/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`;
