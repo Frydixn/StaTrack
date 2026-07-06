@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import {
   Swords, Zap, Cloud, Shield, Search, Info
 } from "lucide-react";
-import { supabase } from "../services/supabaseClient";
+import axios from "axios";
 import { RANK_ORDER } from "../services/achievementEvaluator";
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 function RoleIcon({ role, className }) {
   if (role === "Duelist") return <Swords className={className} size={20} />;
@@ -28,24 +30,24 @@ export default function CompareView({ playerData, onSearch, loadProfile }) {
   // Friend Search State
   const [friendInput, setFriendInput] = useState("");
 
-  // Fetch Pros from Supabase
+  // Fetch Pros from Backend Proxy
   useEffect(() => {
-    if (rivalTab === "pro") {
-      setProsLoading(true);
-      supabase
-        .from("pro_players")
-        .select("*")
-        .eq("active", true)
-        .order("display_name")
-        .then(({ data, error }) => {
-          if (!error && data) {
+    async function fetchPros() {
+      if (rivalTab === "pro") {
+        setProsLoading(true);
+        try {
+          const { data } = await axios.get(`${API_BASE}/api/db/pros`);
+          if (data) {
             setPros(data);
-          } else {
-            console.error("Error fetching pro players:", error);
           }
+        } catch (err) {
+          console.error("Error fetching pro players:", err.message);
+        } finally {
           setProsLoading(false);
-        });
+        }
+      }
     }
+    fetchPros();
   }, [rivalTab]);
 
   const handleFriendSearchSubmit = async (e) => {

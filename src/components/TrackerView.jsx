@@ -10,8 +10,30 @@ import { BarChart3, AlertCircle, Calendar, Filter, X, Award } from "lucide-react
 
 export default function TrackerView({ playerData }) {
   const [dateRange, setDateRange] = useState("all");
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
+  const [dateError, setDateError] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [agentIcons, setAgentIcons] = useState({});
+
+  const handleCustomDateChange = (start, end) => {
+    setCustomStart(start);
+    setCustomEnd(end);
+    setDateError("");
+    
+    if (start && end) {
+      const startDateObj = new Date(start);
+      const endDateObj = new Date(end);
+      const diffTime = endDateObj.getTime() - startDateObj.getTime();
+      const diffDays = diffTime / (1000 * 60 * 60 * 24);
+      
+      if (diffDays < 0) {
+        setDateError("La fecha de inicio no puede ser posterior a la de fin.");
+      } else if (diffDays > 7) {
+        setDateError("El período no puede exceder un máximo de 7 días.");
+      }
+    }
+  };
 
   useEffect(() => {
     fetch("https://valorant-api.com/v1/agents?isPlayableCharacter=true")
@@ -35,16 +57,20 @@ export default function TrackerView({ playerData }) {
   const latestSeason = latestMatch?.metadata?.season_id;
 
   const filteredMatches = matches.filter((m) => {
+    if (dateError) return false; // si el rango es inválido, no mostramos ninguna partida
     if (dateRange === "all") return true;
     const gameStartMs = (m.metadata?.game_start || 0) * 1000;
-    if (dateRange === "week") {
-      return gameStartMs >= Date.now() - 7 * 24 * 60 * 60 * 1000;
-    }
     if (dateRange === "month") {
       return gameStartMs >= Date.now() - 30 * 24 * 60 * 60 * 1000;
     }
     if (dateRange === "act") {
       return m.metadata?.season_id === latestSeason;
+    }
+    if (dateRange === "custom") {
+      if (!customStart || !customEnd) return true;
+      const startMs = new Date(customStart).getTime();
+      const endMs = new Date(customEnd).getTime() + 24 * 60 * 60 * 1000 - 1;
+      return gameStartMs >= startMs && gameStartMs <= endMs;
     }
     return true;
   });
@@ -108,9 +134,14 @@ export default function TrackerView({ playerData }) {
   // Format label for display
   const getRangeLabel = () => {
     if (dateRange === "all") return "TODOS LOS PARTIDOS";
-    if (dateRange === "week") return "ÚLTIMA SEMANA";
     if (dateRange === "month") return "ÚLTIMO MES";
     if (dateRange === "act") return "ÚLTIMO ACTO";
+    if (dateRange === "custom") {
+      if (customStart && customEnd) {
+        return `${customStart} A ${customEnd}`;
+      }
+      return "RANGO PERSONALIZADO";
+    }
     return "TODOS LOS PARTIDOS";
   };
 
@@ -331,7 +362,7 @@ export default function TrackerView({ playerData }) {
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
                         {[
                           { id: "all", label: "HISTORIAL ENTERO" },
-                          { id: "week", label: "ÚLTIMA SEMANA" },
+                          { id: "custom", label: "RANGO FECHAS (MAX 7D)" },
                           { id: "month", label: "ÚLTIMO MES" },
                           { id: "act", label: "ÚLTIMO ACTO" }
                         ].map((opt) => (
@@ -354,6 +385,54 @@ export default function TrackerView({ playerData }) {
                           </button>
                         ))}
                       </div>
+
+                      {dateRange === "custom" && (
+                        <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                            <div style={{ flex: 1 }}>
+                              <label className="font-oswald" style={{ fontSize: "9px", color: "var(--text-dim)", display: "block", marginBottom: "4px", letterSpacing: "0.5px" }}>DÍA INICIO</label>
+                              <input
+                                type="date"
+                                value={customStart}
+                                onChange={(e) => handleCustomDateChange(e.target.value, customEnd)}
+                                style={{
+                                  width: "100%",
+                                  padding: "6px",
+                                  background: "var(--bg)",
+                                  border: "1px solid var(--line)",
+                                  borderRadius: "3px",
+                                  color: "white",
+                                  fontSize: "11px",
+                                  outline: "none"
+                                }}
+                              />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <label className="font-oswald" style={{ fontSize: "9px", color: "var(--text-dim)", display: "block", marginBottom: "4px", letterSpacing: "0.5px" }}>DÍA FINAL</label>
+                              <input
+                                type="date"
+                                value={customEnd}
+                                onChange={(e) => handleCustomDateChange(customStart, e.target.value)}
+                                style={{
+                                  width: "100%",
+                                  padding: "6px",
+                                  background: "var(--bg)",
+                                  border: "1px solid var(--line)",
+                                  borderRadius: "3px",
+                                  color: "white",
+                                  fontSize: "11px",
+                                  outline: "none"
+                                }}
+                              />
+                            </div>
+                          </div>
+                          {dateError && (
+                            <div className="font-oswald" style={{ color: "var(--red)", fontSize: "10px", marginTop: "2px", letterSpacing: "0.5px" }}>
+                              ⚠️ {dateError.toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
 
