@@ -31,6 +31,7 @@ async function loadOrSyncPlayerProfile(name, tag) {
     if (storedMatchesRaw && storedMatchesRaw.length > 0) {
       existingMatchIdsSet = new Set(storedMatchesRaw.map((row) => row.match_id));
     }
+
   } catch (err) {
     console.warn("No se pudieron leer partidas para match_ids del proxy backend:", err.message);
   }
@@ -164,7 +165,7 @@ export default function App() {
         if (snapshot?.stats) {
           const achievements = evaluateAchievements(snapshot.stats);
           const unlockedCount = achievements.filter((a) => a.unlocked).length;
-          
+
           let matches = [];
           try {
             const { data: storedMatchesRaw } = await axios.get(`${API_BASE}/api/db/matches/${encodeURIComponent(player.puuid)}`);
@@ -196,7 +197,7 @@ export default function App() {
           snapshot.stats.trend = snapshot.stats.trend || [];
 
           setPlayerData({
-            account: { 
+            account: {
               puuid: player.puuid, name: player.name, tag: player.tag, region: player.region, account_level: player.account_level,
               card: snapshot.stats.accountCard || null
             },
@@ -222,7 +223,7 @@ export default function App() {
           if (snapshot?.stats) {
             const achievements = evaluateAchievements(snapshot.stats);
             const unlockedCount = achievements.filter((a) => a.unlocked).length;
-            
+
             let matches = [];
             try {
               const { data: storedMatchesRaw } = await axios.get(`${API_BASE}/api/db/matches/${encodeURIComponent(player.puuid)}`);
@@ -237,7 +238,7 @@ export default function App() {
             snapshot.stats.trend = snapshot.stats.trend || [];
 
             setPlayerData({
-              account: { 
+              account: {
                 puuid: player.puuid, name: player.name, tag: player.tag, region: player.region, account_level: player.account_level,
                 card: snapshot.stats.accountCard || null
               },
@@ -326,7 +327,7 @@ export default function App() {
   return (
     <div className={`app-shell ${activeTab === "maps" ? "maps-active" : ""}`}>
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} playerData={playerData} onSearch={handleSearch} loading={loading} />
-      
+
       <div className="app-main">
         <div className="noise-bar"></div>
 
