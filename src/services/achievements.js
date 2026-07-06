@@ -68,7 +68,7 @@ const ACHIEVEMENTS = [
   { id: "comeback_win", name: "Resurrección", desc: "Gana una partida tras ir perdiendo 0-4 en rondas", stat: "comebackWins", target: 1, tier: "gold", icon: "🔄" },
   { id: "flawless_round", name: "Ronda Perfecta", desc: "Gana una ronda sin perder a ningún compañero", stat: "flawlessRounds", target: 1, tier: "silver", icon: "✨" },
 
-  { id: "outstanding", name: "Sobresaliente", desc: "Obten estadisticas superiores a las de tu rango actual", stat: "rankTier", target: "Ranked High", tier: "gold", icon: "🏆" },
+  { id: "outstanding", name: "Sobresaliente", desc: "Obten estadisticas superiores a las de tu rango actual", stat: "radar", target: "5/5", tier: "gold", icon: "🏆" },
 ];
 
 export default ACHIEVEMENTS;
