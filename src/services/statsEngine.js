@@ -240,21 +240,21 @@ export async function syncPlayerMatches(region, name, tag, puuid, existingMatchI
 
   while (page <= maxPages && !hitExisting) {
     try {
-      const url = `${HENRIK_BASE}/valorant/v3/matches/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}?size=20&page=${page}&mode=competitive`;
-      const { data } = await axios.get(url, { headers });
+      // ✅ Usa API_BASE (el proxy), no HENRIK_BASE
+      const url = `${API_BASE}/api/matches/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}?size=20&page=${page}&mode=competitive`;
+      const { data } = await axios.get(url); // ✅ sin headers
+
       const batch = data.data || [];
       if (batch.length === 0) break;
 
-      const compBatch = batch.filter((m) => m.metadata?.mode?.toLowerCase() === "competitive");
-      if (compBatch.length === 0) {
-        page++;
-        continue;
-      }
+      const compBatch = batch.filter(
+        (m) => m.metadata?.mode?.toLowerCase() === "competitive"
+      );
+      if (compBatch.length === 0) { page++; continue; }
 
       for (const match of compBatch) {
         const matchId = match.metadata?.matchid || match.metadata?.match_id;
         if (!matchId) continue;
-
         if (existingMatchIdsSet.has(matchId)) {
           hitExisting = true;
           break;
@@ -277,7 +277,6 @@ export async function syncPlayerMatches(region, name, tag, puuid, existingMatchI
       match_id: m.metadata?.matchid || m.metadata?.match_id,
       match_data: m,
     }));
-
     try {
       await axios.post(`${API_BASE}/api/db/matches`, rowsToInsert);
     } catch (err) {
