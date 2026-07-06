@@ -21,6 +21,25 @@ export default function TrackerView({ playerData }) {
     setCustomEnd(end);
     setDateError("");
     
+    const minDateLimit = new Date("2020-06-02").getTime();
+    const todayLimit = new Date().setHours(23, 59, 59, 999);
+
+    if (start) {
+      const startMs = new Date(start).getTime();
+      if (startMs < minDateLimit) {
+        setDateError("La fecha no puede ser anterior al lanzamiento (2 de junio de 2020).");
+        return;
+      }
+    }
+
+    if (end) {
+      const endMs = new Date(end).getTime();
+      if (endMs > todayLimit) {
+        setDateError("La fecha final no puede ser en el futuro.");
+        return;
+      }
+    }
+    
     if (start && end) {
       const startDateObj = new Date(start);
       const endDateObj = new Date(end);
@@ -32,6 +51,26 @@ export default function TrackerView({ playerData }) {
       } else if (diffDays > 7) {
         setDateError("El período no puede exceder un máximo de 7 días.");
       }
+    }
+  };
+
+  const handleCustomStartSelect = (startVal) => {
+    setDateError("");
+    setCustomStart(startVal);
+    
+    const minDateLimit = new Date("2020-06-02").getTime();
+    if (startVal) {
+      const startDateObj = new Date(startVal);
+      if (startDateObj.getTime() < minDateLimit) {
+        setDateError("La fecha no puede ser anterior al lanzamiento (2 de junio de 2020).");
+        return;
+      }
+
+      const futureDateObj = new Date(startDateObj.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const today = new Date();
+      const targetDateObj = futureDateObj > today ? today : futureDateObj;
+      const formattedFuture = targetDateObj.toISOString().split('T')[0];
+      setCustomEnd(formattedFuture);
     }
   };
 
@@ -393,17 +432,21 @@ export default function TrackerView({ playerData }) {
                               <label className="font-oswald" style={{ fontSize: "9px", color: "var(--text-dim)", display: "block", marginBottom: "4px", letterSpacing: "0.5px" }}>DÍA INICIO</label>
                               <input
                                 type="date"
+                                min="2020-06-02"
+                                max={new Date().toISOString().split('T')[0]}
                                 value={customStart}
-                                onChange={(e) => handleCustomDateChange(e.target.value, customEnd)}
+                                onChange={(e) => handleCustomStartSelect(e.target.value)}
                                 style={{
                                   width: "100%",
-                                  padding: "6px",
-                                  background: "var(--bg)",
-                                  border: "1px solid var(--line)",
-                                  borderRadius: "3px",
+                                  padding: "8px",
+                                  background: "rgba(10, 12, 16, 0.6)",
+                                  border: "1px solid rgba(255, 70, 85, 0.4)",
+                                  borderRadius: "4px",
                                   color: "white",
                                   fontSize: "11px",
-                                  outline: "none"
+                                  fontFamily: "Oswald, sans-serif",
+                                  outline: "none",
+                                  boxShadow: "0 0 5px rgba(255, 70, 85, 0.1)"
                                 }}
                               />
                             </div>
@@ -411,17 +454,21 @@ export default function TrackerView({ playerData }) {
                               <label className="font-oswald" style={{ fontSize: "9px", color: "var(--text-dim)", display: "block", marginBottom: "4px", letterSpacing: "0.5px" }}>DÍA FINAL</label>
                               <input
                                 type="date"
+                                min="2020-06-02"
+                                max={new Date().toISOString().split('T')[0]}
                                 value={customEnd}
                                 onChange={(e) => handleCustomDateChange(customStart, e.target.value)}
                                 style={{
                                   width: "100%",
-                                  padding: "6px",
-                                  background: "var(--bg)",
-                                  border: "1px solid var(--line)",
-                                  borderRadius: "3px",
+                                  padding: "8px",
+                                  background: "rgba(10, 12, 16, 0.6)",
+                                  border: "1px solid rgba(255, 70, 85, 0.4)",
+                                  borderRadius: "4px",
                                   color: "white",
                                   fontSize: "11px",
-                                  outline: "none"
+                                  fontFamily: "Oswald, sans-serif",
+                                  outline: "none",
+                                  boxShadow: "0 0 5px rgba(255, 70, 85, 0.1)"
                                 }}
                               />
                             </div>
