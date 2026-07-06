@@ -1,22 +1,25 @@
 import axios from "axios";
-
+import { supabase } from "./supabaseClient";
 
 const API_KEY = import.meta.env.VITE_HENRIK_API_KEY || "";
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 export async function getAccount(name, tag) {
-  const { data } = await axios.get(`${API_BASE}/api/account/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`);
+  const url = `${HENRIK_BASE}/valorant/v1/account/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`;
+  const { data } = await axios.get(url, { headers });
   return data.data;
 }
 
 export async function getMMR(region, name, tag) {
-  const { data } = await axios.get(`${API_BASE}/api/mmr/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`);
+  const url = `${HENRIK_BASE}/valorant/v2/mmr/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`;
+  const { data } = await axios.get(url, { headers });
   return data.data;
 }
 
 export async function getMMRHistory(region, name, tag) {
   try {
-    const { data } = await axios.get(`${API_BASE}/api/mmr-history/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`);
+    const url = `${HENRIK_BASE}/valorant/v1/mmr-history/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`;
+    const { data } = await axios.get(url, { headers });
     return data.data || [];
   } catch {
     return [];
@@ -24,7 +27,8 @@ export async function getMMRHistory(region, name, tag) {
 }
 
 export async function getMatchHistory(region, name, tag, size = 20) {
-  const { data } = await axios.get(`${API_BASE}/api/matches/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}?size=${size}&mode=competitive`);
+  const url = `${HENRIK_BASE}/valorant/v3/matches/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}?size=${size}&mode=competitive`;
+  const { data } = await axios.get(url, { headers });
   const rawMatches = data.data || [];
   return rawMatches.filter((m) => m.metadata?.mode?.toLowerCase() === "competitive");
 }
@@ -36,8 +40,8 @@ export async function getFullMatchHistory(region, name, tag) {
 
   while (page <= maxPages) {
     try {
-      const url = `${API_BASE}/api/matches/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}?size=20&page=${page}&mode=competitive`;
-      const { data } = await axios.get(url);
+      const url = `${HENRIK_BASE}/valorant/v3/matches/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}?size=20&page=${page}&mode=competitive`;
+      const { data } = await axios.get(url, { headers });
       const batch = data.data || [];
       if (batch.length === 0) break;
       allMatches.push(...batch);
@@ -238,8 +242,8 @@ export async function syncPlayerMatches(region, name, tag, puuid, existingMatchI
 
   while (page <= maxPages && !hitExisting) {
     try {
-      const url = `${API_BASE}/api/matches/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}?size=20&page=${page}&mode=competitive`;
-      const { data } = await axios.get(url);
+      const url = `${HENRIK_BASE}/valorant/v3/matches/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}?size=20&page=${page}&mode=competitive`;
+      const { data } = await axios.get(url, { headers });
       const batch = data.data || [];
       if (batch.length === 0) break;
 
@@ -276,10 +280,12 @@ export async function syncPlayerMatches(region, name, tag, puuid, existingMatchI
       match_data: m,
     }));
 
-    try {
-      await axios.post(`${API_BASE}/api/db/matches`, rowsToInsert);
-    } catch (err) {
-      console.warn("Error al guardar partidas en el proxy backend:", err.message);
+    const { error } = await supabase
+      .from("player_matches")
+      .upsert(rowsToInsert, { onConflict: "puuid,match_id", ignoreDuplicates: true });
+
+    if (error) {
+      console.warn("Error al guardar partidas en Supabase:", error.message);
     }
   }
 

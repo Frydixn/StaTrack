@@ -12,8 +12,9 @@ export default function PlayerProfileBar({
   const [activeTab, setActiveTab] = useState("agents");
   const [expanded, setExpanded] = useState(false);
   const [agentIcons, setAgentIcons] = useState({});
+  const [seasonsMap, setSeasonsMap] = useState({});
 
-  // Dynamic fetch of playable agent icons from Valorant-API
+  // Dynamic fetch of playable agent icons and seasons from Valorant-API
   useEffect(() => {
     fetch("https://valorant-api.com/v1/agents?isPlayableCharacter=true")
       .then((res) => res.json())
@@ -27,6 +28,19 @@ export default function PlayerProfileBar({
         setAgentIcons(mapping);
       })
       .catch((err) => console.warn("Error fetching agent icons from Valorant-API:", err));
+
+    fetch("https://valorant-api.com/v1/seasons")
+      .then((res) => res.json())
+      .then((resJson) => {
+        const mapping = {};
+        if (resJson.data) {
+          resJson.data.forEach((s) => {
+            mapping[s.uuid.toLowerCase()] = s.displayName;
+          });
+        }
+        setSeasonsMap(mapping);
+      })
+      .catch((err) => console.warn("Error fetching seasons from Valorant-API:", err));
   }, []);
 
   if (!account || !stats) return null;
@@ -152,10 +166,14 @@ export default function PlayerProfileBar({
 
   // Act / Season tag
   const rawAct = typeof latestAct === "string" ? latestAct : (latestAct?.season?.short || latestAct?.short || stats.mmr?.current_data?.season_id || "e11a4");
-  
+
   const formatSeasonId = (seasonId) => {
     if (!seasonId) return "EPISODIO 11 ACTO 4";
-    const match = seasonId.match(/e(\d+)a(\d+)/i);
+    const clean = seasonId.toLowerCase().trim();
+    if (seasonsMap[clean]) {
+      return seasonsMap[clean].toUpperCase();
+    }
+    const match = clean.match(/e(\d+)a(\d+)/i);
     if (match) {
       return `EPISODIO ${match[1]} ACTO ${match[2]}`;
     }
