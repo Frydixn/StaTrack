@@ -88,7 +88,7 @@ async function loadOrSyncPlayerProfile(name, tag) {
   };
 
   try {
-    await saveToSupabase(result);
+    await savePlayerSnapshot(result);
   } catch (dbErr) {
     console.warn("No se pudo guardar el snapshot en el proxy backend:", dbErr.message);
   }
@@ -96,7 +96,7 @@ async function loadOrSyncPlayerProfile(name, tag) {
   return result;
 }
 
-async function saveToSupabase(playerData) {
+async function savePlayerSnapshot(playerData) {
   const { account, stats, achievements } = playerData;
   try {
     await axios.post(`${API_BASE}/api/db/player`, {
@@ -232,7 +232,7 @@ export default function App() {
                 matches.sort((a, b) => (b.metadata?.game_start || 0) - (a.metadata?.game_start || 0));
               }
             } catch (e) {
-              console.warn("Error leyendo partidas de Supabase para fallback de error:", e.message);
+              console.warn("Error leyendo partidas de la base de datos para fallback de error:", e.message);
             }
 
             snapshot.stats.trend = snapshot.stats.trend || [];
@@ -341,7 +341,7 @@ export default function App() {
                   <div className="loading-spinner"></div>
                   Sincronizando expediente competitivo de combate...
                   <span style={{ fontSize: 13, color: "var(--text-dim)" }}>
-                    Esto puede tardar unos segundos — guardando partidas nuevas en Supabase
+                    Esto puede tardar unos segundos — guardando partidas nuevas en la base de datos
                   </span>
                 </div>
               )}
