@@ -45,7 +45,7 @@ const ACHIEVEMENTS = [
   { id: "main_agent_200", name: "Devoción Absoluta", desc: "Juega 200 partidas con tu agente favorito", stat: "mostPlayedAgentCount", target: 200, tier: "gold", icon: "🎭" },
 
   { id: "maps_5", name: "Turista", desc: "Juega en 5 mapas distintos", stat: "uniqueMaps", target: 5, tier: "bronze", icon: "🗺️" },
-  { id: "maps_all", name: "Conoce el Terreno", desc: "Juega en todos los mapas del pool actual", stat: "uniqueMaps", target: 8, tier: "silver", icon: "🗺️" },
+  { id: "maps_all", name: "Conoce el Terreno", desc: "Juega en todos los mapas del pool actual", stat: "uniqueMaps", target: 7, tier: "silver", icon: "🗺️" },
 
   { id: "dmg_100k", name: "Castigador", desc: "Inflige 100,000 de daño total", stat: "totalDamage", target: 100000, tier: "bronze", icon: "💥" },
   { id: "dmg_500k", name: "Fuerza Destructiva", desc: "Inflige 500,000 de daño total", stat: "totalDamage", target: 500000, tier: "silver", icon: "💥" },
@@ -67,6 +67,8 @@ const ACHIEVEMENTS = [
 
   { id: "comeback_win", name: "Resurrección", desc: "Gana una partida tras ir perdiendo 0-4 en rondas", stat: "comebackWins", target: 1, tier: "gold", icon: "🔄" },
   { id: "flawless_round", name: "Ronda Perfecta", desc: "Gana una ronda sin perder a ningún compañero", stat: "flawlessRounds", target: 1, tier: "silver", icon: "✨" },
+
+  { id: "outstanding", name: "Sobresaliente", desc: "Obten estadisticas superiores a las de tu rango actual", stat: "rankTier", target: "Ranked High", tier: "gold", icon: "🏆" },
 ];
 
 export default ACHIEVEMENTS;

@@ -151,7 +151,18 @@ export default function PlayerProfileBar({
   const winrateClass = winrate >= benchmark.winrate ? "text-win font-oswald" : "text-loss font-oswald";
 
   // Act / Season tag
-  const currentActTag = typeof latestAct === "string" ? latestAct : (latestAct?.season?.short || latestAct?.short || stats.mmr?.current_data?.season_id?.toUpperCase() || "E11A4");
+  const rawAct = typeof latestAct === "string" ? latestAct : (latestAct?.season?.short || latestAct?.short || stats.mmr?.current_data?.season_id || "e11a4");
+  
+  const formatSeasonId = (seasonId) => {
+    if (!seasonId) return "EPISODIO 11 ACTO 4";
+    const match = seasonId.match(/e(\d+)a(\d+)/i);
+    if (match) {
+      return `EPISODIO ${match[1]} ACTO ${match[2]}`;
+    }
+    return seasonId.toUpperCase();
+  };
+
+  const currentActTag = formatSeasonId(rawAct);
 
   // 4. Dynamic calculation of Agent and Map statistics from matches
   const computedAgents = (() => {
