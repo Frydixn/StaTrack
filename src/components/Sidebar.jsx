@@ -39,7 +39,7 @@ export default function Sidebar({ activeTab, setActiveTab, playerData, onSearch,
     setInputValue(`${player.name}#${player.tag}`);
     setIsDropdownOpen(false);
     onSearch(player.name, player.tag);
-    
+
     let updatedRecent = [player, ...recentPlayers.filter((r) => r.puuid !== player.puuid)].slice(0, 10);
     setRecentPlayers(updatedRecent);
     localStorage.setItem("recentPlayers", JSON.stringify(updatedRecent));
@@ -191,18 +191,20 @@ export default function Sidebar({ activeTab, setActiveTab, playerData, onSearch,
               top: "100%",
               left: "16px",
               right: "16px",
-              background: "var(--bg-panel)",
+              background: "#14171d",
               border: "1px solid var(--line)",
               borderRadius: "4px",
-              zIndex: 100,
-              boxShadow: "0 8px 24px rgba(0,0,0,0.8)",
+              zIndex: 9999,
+              boxShadow: "0 8px 24px rgba(0,0,0,0.9)",
               display: "flex",
-              height: "220px",
+              flexDirection: "column",
+              height: "250px",
+              width: "200px",
               marginTop: "4px"
             }}
             onMouseDown={(e) => e.preventDefault()}
           >
-            <div style={{ width: "90px", borderRight: "1px solid var(--line)", background: "rgba(0,0,0,0.3)", display: "flex", flexDirection: "column", padding: "4px", gap: "2px" }}>
+            <div style={{ display: "flex", borderBottom: "1px solid var(--line)", background: "rgba(0,0,0,0.3)", padding: "4px", gap: "2px" }}>
               {[
                 { id: "results", label: "RESULTADOS", icon: Search },
                 { id: "recent", label: "RECIENTES", icon: Clock },
@@ -213,17 +215,18 @@ export default function Sidebar({ activeTab, setActiveTab, playerData, onSearch,
                   onClick={() => setDropdownTab(t.id)}
                   className="font-oswald"
                   style={{
+                    flex: 1,
                     display: "flex",
                     alignItems: "center",
+                    justifyContent: "center",
                     gap: "4px",
-                    padding: "6px",
+                    padding: "6px 2px",
                     background: dropdownTab === t.id ? "rgba(255, 70, 85, 0.15)" : "transparent",
                     border: "none",
                     borderRadius: "2px",
                     color: dropdownTab === t.id ? "var(--red)" : "var(--text-dim)",
                     cursor: "pointer",
                     fontSize: "9px",
-                    textAlign: "left",
                     letterSpacing: "0.5px"
                   }}
                 >
