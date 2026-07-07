@@ -1524,7 +1524,7 @@ footer {
   flex-direction: column;
   flex-shrink: 0;
   z-index: 100;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .sidebar-nav {
@@ -1771,6 +1771,7 @@ footer {
     top: 0;
     z-index: 100;
     gap: 8px;
+    overflow: visible !important;
   }
 
   .sidebar-brand {

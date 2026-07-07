@@ -198,8 +198,8 @@ export default function Sidebar({ activeTab, setActiveTab, playerData, onSearch,
               boxShadow: "0 8px 24px rgba(0,0,0,0.9)",
               display: "flex",
               flexDirection: "column",
-              height: "250px",
-              width: "200px",
+              height: "300px",
+              width: "300px",
               marginTop: "4px"
             }}
             onMouseDown={(e) => e.preventDefault()}
