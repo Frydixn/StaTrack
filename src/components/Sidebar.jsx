@@ -1,9 +1,62 @@
-import React, { useState } from "react";
-import { BarChart2, Award, Users, Crosshair, Map, Swords } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { BarChart2, Award, Users, Crosshair, Map, Swords, Search, Clock, Star } from "lucide-react";
 
 export default function Sidebar({ activeTab, setActiveTab, playerData, onSearch, loading }) {
   const [inputValue, setInputValue] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [dropdownTab, setDropdownTab] = useState("results"); // "results" | "recent" | "favorites"
+  const [suggestions, setSuggestions] = useState([]);
+  const [recentPlayers, setRecentPlayers] = useState([]);
+  const [favorites, setFavorites] = useState([]);
+
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
+  useEffect(() => {
+    const savedRecent = JSON.parse(localStorage.getItem("recentPlayers") || "[]");
+    const savedFavs = JSON.parse(localStorage.getItem("favoritePlayers") || "[]");
+    setRecentPlayers(savedRecent);
+    setFavorites(savedFavs);
+  }, [isDropdownOpen]);
+
+  useEffect(() => {
+    if (!inputValue.trim()) {
+      setSuggestions([]);
+      return;
+    }
+    const delayDebounce = setTimeout(() => {
+      fetch(`${API_BASE}/api/db/players/suggest?q=${encodeURIComponent(inputValue.trim())}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setSuggestions(data || []);
+        })
+        .catch((err) => console.warn("Error fetching suggestions:", err));
+    }, 300);
+    return () => clearTimeout(delayDebounce);
+  }, [inputValue]);
+
+  const selectPlayer = (player) => {
+    setInputValue(`${player.name}#${player.tag}`);
+    setIsDropdownOpen(false);
+    onSearch(player.name, player.tag);
+    
+    let updatedRecent = [player, ...recentPlayers.filter((r) => r.puuid !== player.puuid)].slice(0, 10);
+    setRecentPlayers(updatedRecent);
+    localStorage.setItem("recentPlayers", JSON.stringify(updatedRecent));
+  };
+
+  const toggleFavorite = (e, player) => {
+    e.stopPropagation();
+    let updatedFavs = [...favorites];
+    const idx = updatedFavs.findIndex((f) => f.puuid === player.puuid);
+    if (idx !== -1) {
+      updatedFavs.splice(idx, 1);
+    } else {
+      updatedFavs.push(player);
+    }
+    setFavorites(updatedFavs);
+    localStorage.setItem("favoritePlayers", JSON.stringify(updatedFavs));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -18,7 +71,56 @@ export default function Sidebar({ activeTab, setActiveTab, playerData, onSearch,
       return;
     }
     setErrorMsg("");
+    setIsDropdownOpen(false);
     onSearch(name, tag);
+  };
+
+  const renderPlayerRow = (p) => {
+    const isFav = favorites.some((f) => f.puuid === p.puuid);
+    return (
+      <div
+        key={p.puuid}
+        onClick={() => selectPlayer(p)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "6px 8px",
+          background: "rgba(255,255,255,0.02)",
+          borderRadius: "3px",
+          cursor: "pointer",
+          transition: "background 0.2s"
+        }}
+        className="player-suggest-row"
+        onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}
+        onMouseLeave={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.02)"}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span style={{ fontSize: "10px", color: "var(--red)" }}>🔴</span>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <span className="font-oswald" style={{ fontSize: "11px", color: "white", letterSpacing: "0.5px" }}>
+              {p.name}
+              <span style={{ color: "var(--text-dim)", fontSize: "9px", marginLeft: "2px" }}>#{p.tag}</span>
+            </span>
+            <span style={{ fontSize: "8px", color: "var(--text-dim)" }}>{p.region?.toUpperCase()} · ELO {p.elo || "—"}</span>
+          </div>
+        </div>
+        <button
+          onClick={(e) => toggleFavorite(e, p)}
+          style={{
+            background: "transparent",
+            border: "none",
+            color: isFav ? "var(--red)" : "var(--text-dim)",
+            cursor: "pointer",
+            fontSize: "12px",
+            display: "flex",
+            alignItems: "center"
+          }}
+        >
+          {isFav ? "★" : "☆"}
+        </button>
+      </div>
+    );
   };
 
   const navItems = [
@@ -37,12 +139,14 @@ export default function Sidebar({ activeTab, setActiveTab, playerData, onSearch,
         </span>
       </div>
 
-      <div className="sidebar-search-container" style={{ padding: "0 16px 16px 16px", borderBottom: "1px solid var(--line)" }}>
+      <div className="sidebar-search-container" style={{ padding: "0 16px 16px 16px", borderBottom: "1px solid var(--line)", position: "relative" }}>
         <form onSubmit={handleSubmit} style={{ display: "flex", gap: "6px" }}>
           <input
             type="text"
             placeholder="Nombre#TAG"
             value={inputValue}
+            onFocus={() => setIsDropdownOpen(true)}
+            onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
             onChange={(e) => {
               setInputValue(e.target.value);
               if (errorMsg) setErrorMsg("");
@@ -78,6 +182,91 @@ export default function Sidebar({ activeTab, setActiveTab, playerData, onSearch,
           </button>
         </form>
         {errorMsg && <div style={{ color: "var(--red)", fontSize: "10px", marginTop: "4px", fontFamily: "monospace" }}>{errorMsg}</div>}
+
+        {isDropdownOpen && (
+          <div
+            className="search-dropdown"
+            style={{
+              position: "absolute",
+              top: "100%",
+              left: "16px",
+              right: "16px",
+              background: "var(--bg-panel)",
+              border: "1px solid var(--line)",
+              borderRadius: "4px",
+              zIndex: 100,
+              boxShadow: "0 8px 24px rgba(0,0,0,0.8)",
+              display: "flex",
+              height: "220px",
+              marginTop: "4px"
+            }}
+            onMouseDown={(e) => e.preventDefault()}
+          >
+            <div style={{ width: "90px", borderRight: "1px solid var(--line)", background: "rgba(0,0,0,0.3)", display: "flex", flexDirection: "column", padding: "4px", gap: "2px" }}>
+              {[
+                { id: "results", label: "RESULTADOS", icon: Search },
+                { id: "recent", label: "RECIENTES", icon: Clock },
+                { id: "favorites", label: "FAVORITOS", icon: Star }
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setDropdownTab(t.id)}
+                  className="font-oswald"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    padding: "6px",
+                    background: dropdownTab === t.id ? "rgba(255, 70, 85, 0.15)" : "transparent",
+                    border: "none",
+                    borderRadius: "2px",
+                    color: dropdownTab === t.id ? "var(--red)" : "var(--text-dim)",
+                    cursor: "pointer",
+                    fontSize: "9px",
+                    textAlign: "left",
+                    letterSpacing: "0.5px"
+                  }}
+                >
+                  <t.icon size={10} />
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ flex: 1, padding: "8px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "4px" }}>
+              {dropdownTab === "results" && (
+                <>
+                  <div className="font-oswald" style={{ fontSize: "8px", color: "var(--text-dim)", marginBottom: "4px", letterSpacing: "0.5px" }}>JUGADORES COINCIDENTES</div>
+                  {suggestions.length === 0 ? (
+                    <div style={{ fontSize: "10px", color: "var(--text-dim)", padding: "15px 0", textAlign: "center" }}>Escribe para sugerir jugadores...</div>
+                  ) : (
+                    suggestions.map((p) => renderPlayerRow(p))
+                  )}
+                </>
+              )}
+              {dropdownTab === "recent" && (
+                <>
+                  <div className="font-oswald" style={{ fontSize: "8px", color: "var(--text-dim)", marginBottom: "4px", letterSpacing: "0.5px" }}>BÚSQUEDAS RECIENTES</div>
+                  {recentPlayers.length === 0 ? (
+                    <div style={{ fontSize: "10px", color: "var(--text-dim)", padding: "15px 0", textAlign: "center" }}>Sin búsquedas recientes.</div>
+                  ) : (
+                    recentPlayers.map((p) => renderPlayerRow(p))
+                  )}
+                </>
+              )}
+              {dropdownTab === "favorites" && (
+                <>
+                  <div className="font-oswald" style={{ fontSize: "8px", color: "var(--text-dim)", marginBottom: "4px", letterSpacing: "0.5px" }}>MIS FAVORITOS</div>
+                  {favorites.length === 0 ? (
+                    <div style={{ fontSize: "10px", color: "var(--text-dim)", padding: "15px 0", textAlign: "center" }}>No has agregado favoritos.</div>
+                  ) : (
+                    favorites.map((p) => renderPlayerRow(p))
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <nav className="sidebar-nav">

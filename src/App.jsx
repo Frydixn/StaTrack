@@ -93,6 +93,23 @@ async function loadOrSyncPlayerProfile(name, tag) {
     console.warn("No se pudo guardar el snapshot en el proxy backend:", dbErr.message);
   }
 
+  // Guardar en búsquedas recientes de localStorage
+  try {
+    const savedRecent = JSON.parse(localStorage.getItem("recentPlayers") || "[]");
+    const newRecentItem = {
+      puuid: account.puuid,
+      name: account.name,
+      tag: account.tag,
+      region,
+      account_level: account.account_level,
+      elo: stats.elo || stats.mmr?.current_data?.elo || 0
+    };
+    const updated = [newRecentItem, ...savedRecent.filter((r) => r.puuid !== newRecentItem.puuid)].slice(0, 10);
+    localStorage.setItem("recentPlayers", JSON.stringify(updated));
+  } catch (err) {
+    console.warn("Error saving recent players to localStorage:", err);
+  }
+
   return result;
 }
 
