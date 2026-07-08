@@ -1006,6 +1006,58 @@ export default function MapsView() {
                   preserveAspectRatio="none"
                   style={{ position: "absolute", inset: 0, width: "100%", height: "100%", overflow: "visible", pointerEvents: "none", zIndex: 30 }}
                 >
+                  <defs>
+                    {/* Viper: Verde tóxico profundo */}
+                    <radialGradient id="viper-smoke-grad" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stopColor="#22c55e" stopOpacity="0.55" />
+                      <stop offset="65%" stopColor="#15803d" stopOpacity="0.75" />
+                      <stop offset="100%" stopColor="#0f2f1d" stopOpacity="0.9" />
+                    </radialGradient>
+
+                    {/* Omen: Morado misterioso profundo */}
+                    <radialGradient id="omen-smoke-grad" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stopColor="#2e1065" stopOpacity="0.7" />
+                      <stop offset="70%" stopColor="#1e1b4b" stopOpacity="0.85" />
+                      <stop offset="100%" stopColor="#030712" stopOpacity="0.95" />
+                    </radialGradient>
+
+                    {/* Miks: Degradado turquesa y esmeralda con centro brillante */}
+                    <radialGradient id="miks-smoke-grad" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stopColor="#fef08a" stopOpacity="0.95" />
+                      <stop offset="35%" stopColor="#06b6d4" stopOpacity="0.75" />
+                      <stop offset="75%" stopColor="#047857" stopOpacity="0.85" />
+                      <stop offset="100%" stopColor="#022c22" stopOpacity="0.95" />
+                    </radialGradient>
+
+                    {/* Harbor: Azul profundo con corrientes */}
+                    <radialGradient id="harbor-smoke-grad" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.6" />
+                      <stop offset="65%" stopColor="#0369a1" stopOpacity="0.8" />
+                      <stop offset="100%" stopColor="#082f49" stopOpacity="0.95" />
+                    </radialGradient>
+
+                    {/* Clove: Remolino Rosa / Lila */}
+                    <radialGradient id="clove-smoke-grad" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stopColor="#f472b6" stopOpacity="0.75" />
+                      <stop offset="55%" stopColor="#c084fc" stopOpacity="0.8" />
+                      <stop offset="100%" stopColor="#1e1b4b" stopOpacity="0.95" />
+                    </radialGradient>
+
+                    {/* Astra: Morado galáctico */}
+                    <radialGradient id="astra-smoke-grad" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stopColor="#e879f9" stopOpacity="0.75" />
+                      <stop offset="60%" stopColor="#7e22ce" stopOpacity="0.85" />
+                      <stop offset="100%" stopColor="#1e1b4b" stopOpacity="0.95" />
+                    </radialGradient>
+
+                    {/* Brimstone: Naranja/Fuego y ceniza */}
+                    <radialGradient id="brimstone-smoke-grad" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stopColor="#ffedd5" stopOpacity="0.85" />
+                      <stop offset="50%" stopColor="#ea580c" stopOpacity="0.8" />
+                      <stop offset="100%" stopColor="#431407" stopOpacity="0.95" />
+                    </radialGradient>
+                  </defs>
+
                   {/* Walls & Trapwires */}
                   {abilityMarkers.filter(m => m.archetype === "wall" || m.archetype === "trapwire").map(m => {
                     const sc = m.team === "atk" ? "var(--cyan)" : m.team === "def" ? "var(--red)" : m.strokeColor;
@@ -1066,9 +1118,78 @@ export default function MapsView() {
                         }}
                         onContextMenu={e => { e.preventDefault(); setContextMenu({ markerId: m.id, markerType: "ability", x: e.clientX, y: e.clientY }); }}
                       >
-                        {isSmoke ? (
-                          <circle cx={m.cx} cy={m.cy} r={m.radius} fill={fc} stroke={sc} strokeWidth={0.6} strokeDasharray="2 1" />
-                        ) : (
+                        {isSmoke ? (() => {
+                          const ag = (m.agentName || "").toLowerCase();
+                          let fillUrl = fc;
+                          if (ag === "viper") fillUrl = "url(#viper-smoke-grad)";
+                          else if (ag === "omen") fillUrl = "url(#omen-smoke-grad)";
+                          else if (ag === "miks") fillUrl = "url(#miks-smoke-grad)";
+                          else if (ag === "harbor") fillUrl = "url(#harbor-smoke-grad)";
+                          else if (ag === "clove") fillUrl = "url(#clove-smoke-grad)";
+                          else if (ag === "astra") fillUrl = "url(#astra-smoke-grad)";
+                          else if (ag === "brimstone") fillUrl = "url(#brimstone-smoke-grad)";
+
+                          return (
+                            <g>
+                              {/* Círculo base con el gradiente de textura */}
+                              <circle cx={m.cx} cy={m.cy} r={m.radius} fill={fillUrl} stroke={sc} strokeWidth={0.6} />
+
+                              {/* Efectos y texturas específicas */}
+                              {ag === "viper" && (
+                                <>
+                                  <circle cx={m.cx - m.radius * 0.25} cy={m.cy - m.radius * 0.2} r={m.radius * 0.35} fill="rgba(34,197,94,0.25)" filter="blur(0.5px)" />
+                                  <circle cx={m.cx + m.radius * 0.3} cy={m.cy + m.radius * 0.25} r={m.radius * 0.3} fill="rgba(34,197,94,0.18)" filter="blur(0.5px)" />
+                                  <circle cx={m.cx - m.radius * 0.1} cy={m.cy + m.radius * 0.35} r={m.radius * 0.2} fill="rgba(22,163,74,0.3)" filter="blur(0.5px)" />
+                                </>
+                              )}
+
+                              {ag === "omen" && (
+                                <>
+                                  <circle cx={m.cx} cy={m.cy} r={m.radius * 0.75} fill="none" stroke="rgba(147,51,234,0.18)" strokeWidth={0.5} strokeDasharray="3 2" />
+                                  <circle cx={m.cx} cy={m.cy} r={m.radius * 0.45} fill="none" stroke="rgba(0,0,0,0.4)" strokeWidth={1} />
+                                </>
+                              )}
+
+                              {ag === "miks" && (
+                                <>
+                                  <circle cx={m.cx} cy={m.cy} r={m.radius * 0.8} fill="none" stroke="rgba(254,240,138,0.2)" strokeWidth={0.5} />
+                                  <circle cx={m.cx} cy={m.cy} r={m.radius * 0.2} fill="#fef08a" opacity={0.6} filter="blur(0.5px)" />
+                                </>
+                              )}
+
+                              {ag === "harbor" && (
+                                <>
+                                  <circle cx={m.cx} cy={m.cy} r={m.radius * 0.88} fill="none" stroke="rgba(250,204,21,0.45)" strokeWidth={0.3} strokeDasharray="4 2" />
+                                  <circle cx={m.cx} cy={m.cy} r={m.radius * 0.72} fill="none" stroke="rgba(250,204,21,0.3)" strokeWidth={0.25} strokeDasharray="2 3" />
+                                  <circle cx={m.cx} cy={m.cy} r={m.radius * 0.5} fill="none" stroke="rgba(56,189,248,0.25)" strokeWidth={0.4} />
+                                </>
+                              )}
+
+                              {ag === "clove" && (
+                                <>
+                                  {/* Remolinos central espiral */}
+                                  <path d={`M ${m.cx} ${m.cy} Q ${m.cx + m.radius * 0.4} ${m.cy - m.radius * 0.4} ${m.cx + m.radius * 0.1} ${m.cy - m.radius * 0.6}`} fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth={0.35} strokeLinecap="round" />
+                                  <path d={`M ${m.cx} ${m.cy} Q ${m.cx - m.radius * 0.4} ${m.cy + m.radius * 0.4} ${m.cx - m.radius * 0.1} ${m.cy + m.radius * 0.6}`} fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth={0.35} strokeLinecap="round" />
+                                </>
+                              )}
+
+                              {ag === "astra" && (
+                                <>
+                                  <circle cx={m.cx} cy={m.cy} r={m.radius * 0.8} fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={0.25} />
+                                  <circle cx={m.cx} cy={m.cy} r={m.radius * 0.55} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth={0.2} />
+                                  <circle cx={m.cx} cy={m.cy} r={m.radius * 0.3} fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth={0.15} />
+                                </>
+                              )}
+
+                              {ag === "brimstone" && (
+                                <>
+                                  <circle cx={m.cx} cy={m.cy} r={m.radius * 0.75} fill="none" stroke="rgba(251,146,60,0.35)" strokeWidth={0.4} strokeDasharray="5 3" />
+                                  <circle cx={m.cx} cy={m.cy} r={m.radius * 0.45} fill="none" stroke="rgba(254,215,170,0.4)" strokeWidth={0.3} />
+                                </>
+                              )}
+                            </g>
+                          );
+                        })() : (
                           // Non-smoke circular-logic abilities shown as rounded rectangles (cuadrado con bordes curvos)
                           <rect
                             x={m.cx - m.radius}
