@@ -1056,6 +1056,20 @@ export default function MapsView() {
                       <stop offset="50%" stopColor="#ea580c" stopOpacity="0.8" />
                       <stop offset="100%" stopColor="#431407" stopOpacity="0.95" />
                     </radialGradient>
+
+                    {/* Jett: Gris plateado / viento rápido */}
+                    <radialGradient id="jett-smoke-grad" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stopColor="#f1f5f9" stopOpacity="0.8" />
+                      <stop offset="60%" stopColor="#cbd5e1" stopOpacity="0.85" />
+                      <stop offset="100%" stopColor="#64748b" stopOpacity="0.95" />
+                    </radialGradient>
+
+                    {/* Cypher: Prisión cibernética oscura y translúcida */}
+                    <radialGradient id="cypher-smoke-grad" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stopColor="#1e293b" stopOpacity="0.3" />
+                      <stop offset="85%" stopColor="#0f172a" stopOpacity="0.45" />
+                      <stop offset="100%" stopColor="#020617" stopOpacity="0.6" />
+                    </radialGradient>
                   </defs>
 
                   {/* Walls & Trapwires */}
@@ -1128,11 +1142,15 @@ export default function MapsView() {
                           else if (ag === "clove") fillUrl = "url(#clove-smoke-grad)";
                           else if (ag === "astra") fillUrl = "url(#astra-smoke-grad)";
                           else if (ag === "brimstone") fillUrl = "url(#brimstone-smoke-grad)";
+                          else if (ag === "jett") fillUrl = "url(#jett-smoke-grad)";
+                          else if (ag === "cypher") fillUrl = "url(#cypher-smoke-grad)";
+
+                          const customStroke = ag === "cypher" ? "#38bdf8" : sc;
 
                           return (
                             <g>
                               {/* Círculo base con el gradiente de textura */}
-                              <circle cx={m.cx} cy={m.cy} r={m.radius} fill={fillUrl} stroke={sc} strokeWidth={0.6} />
+                              <circle cx={m.cx} cy={m.cy} r={m.radius} fill={fillUrl} stroke={customStroke} strokeWidth={ag === "cypher" ? 0.2 : 0.6} />
 
                               {/* Efectos y texturas específicas */}
                               {ag === "viper" && (
@@ -1185,6 +1203,20 @@ export default function MapsView() {
                                 <>
                                   <circle cx={m.cx} cy={m.cy} r={m.radius * 0.75} fill="none" stroke="rgba(251,146,60,0.35)" strokeWidth={0.4} strokeDasharray="5 3" />
                                   <circle cx={m.cx} cy={m.cy} r={m.radius * 0.45} fill="none" stroke="rgba(254,215,170,0.4)" strokeWidth={0.3} />
+                                </>
+                              )}
+
+                              {ag === "jett" && (
+                                <>
+                                  <circle cx={m.cx - m.radius * 0.15} cy={m.cy - m.radius * 0.15} r={m.radius * 0.25} fill="rgba(255,255,255,0.25)" filter="blur(0.5px)" />
+                                  <circle cx={m.cx + m.radius * 0.2} cy={m.cy + m.radius * 0.2} r={m.radius * 0.2} fill="rgba(255,255,255,0.2)" filter="blur(0.5px)" />
+                                  <circle cx={m.cx} cy={m.cy} r={m.radius * 0.7} fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth={0.3} strokeDasharray="5 2" />
+                                </>
+                              )}
+
+                              {ag === "cypher" && (
+                                <>
+                                  <circle cx={m.cx} cy={m.cy} r={m.radius * 0.9} fill="none" stroke="rgba(56,189,248,0.2)" strokeWidth={0.1} />
                                 </>
                               )}
                             </g>
