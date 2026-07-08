@@ -97,11 +97,15 @@ function classifyAbility(ability, agentName, agentRole) {
   }
   // Deadlock Sensor (Sensor Sónico)
   if (agent === "deadlock" && (name.includes("sensor") || name.includes("sónico"))) {
-    return { archetype: "wall", length: (8 * SCALE_FACTOR) * METERS_TO_PCT, strokeWidth: (6 * SCALE_FACTOR) * METERS_TO_PCT, strokeColor: "#94a3b8", fillColor: "rgba(203, 213, 225, 0.1)" };
+    return { archetype: "wall", length: (8 * SCALE_FACTOR) * METERS_TO_PCT, strokeWidth: (6 * SCALE_FACTOR) * METERS_TO_PCT, strokeColor: "#38bdf8", fillColor: "rgba(30, 58, 138, 0.55)", isDeadlockSensor: true };
   }
   // Deadlock Net (Red Gravitacional)
-  if (agent === "deadlock" && (name.includes("net") || name.includes("red") || name.includes("gravitacional"))) {
-    return { archetype: "slow", radius: (6 * SCALE_FACTOR) * METERS_TO_PCT, fillColor: "rgba(203, 213, 225, 0.35)", strokeColor: "#64748b", resizable: false };
+  if (agent === "deadlock" && (name.includes("net") || name.includes("red") || name.includes("gravitacional") || name.includes("gravnet"))) {
+    return { archetype: "gravnet", radius: (6 * SCALE_FACTOR) * METERS_TO_PCT, fillColor: "url(#gravnet-grad)", strokeColor: "#38bdf8", resizable: false };
+  }
+  // Deadlock Barrier Mesh (Malla de Barrera)
+  if (agent === "deadlock" && (name.includes("barrier") || name.includes("barrera") || name.includes("mesh") || name.includes("malla"))) {
+    return { archetype: "barrier_mesh", radius: (5 * SCALE_FACTOR) * METERS_TO_PCT, strokeColor: "#38bdf8" };
   }
   // KAY/O Knife (Punto cero)
   if (agent === "kayo" && (name.includes("knife") || name.includes("cero") || name.includes("cuchillo") || name.includes("zero"))) {
@@ -568,8 +572,8 @@ export default function MapsView() {
       setGhostPreview({ type: "agent", cx: x, cy: y, icon: p.icon });
     } else if (p.type === "ability") {
       const c = p.classified;
-      if (["smoke", "molotov", "slow", "point"].includes(c.archetype)) {
-        setGhostPreview({ type: "circle", cx: x, cy: y, radius: c.radius || 5, fillColor: c.fillColor, strokeColor: c.strokeColor });
+      if (["smoke", "molotov", "slow", "point", "gravnet", "barrier_mesh"].includes(c.archetype)) {
+        setGhostPreview({ type: "circle", cx: x, cy: y, radius: c.radius || 5, fillColor: c.fillColor || "rgba(56,189,248,0.25)", strokeColor: c.strokeColor, classified: c, agentName: p.agentName });
       } else if (c.archetype === "cone") {
         setGhostPreview({ type: "cone", cx: x, cy: y, length: c.length, startWidth: c.startWidth, endWidth: c.endWidth, strokeColor: c.strokeColor, fillColor: c.fillColor });
       } else {
@@ -592,7 +596,7 @@ export default function MapsView() {
       const c = payload.classified;
       snapshotState(agentMarkers, abilityMarkers, drawnArrows);
       let newMarker;
-      if (["smoke", "molotov", "slow", "point"].includes(c.archetype)) {
+      if (["smoke", "molotov", "slow", "point", "gravnet", "barrier_mesh"].includes(c.archetype)) {
         newMarker = { id: generateId(), archetype: c.archetype, agentName: payload.agentName, abilityName: payload.abilityName, icon: payload.icon, cx: x, cy: y, radius: c.radius || 5, fillColor: c.fillColor, strokeColor: c.strokeColor, resizable: false, team: null };
       } else if (["wall", "trapwire", "cone"].includes(c.archetype)) {
         newMarker = {
@@ -628,8 +632,7 @@ export default function MapsView() {
         const { x, y } = getCanvasCoords(e);
         setDrawingArrow({ x1: x, y1: y, currentX: x, currentY: y });
       } else if (activeTool === "select") {
-        setIsPanning(true);
-        setPanStart({ x: e.clientX - panOffset.x, y: e.clientY - panOffset.y });
+        // Panning is disabled as per user request to lock map positioning
       }
     }
   };
@@ -1007,6 +1010,16 @@ export default function MapsView() {
                   style={{ position: "absolute", inset: 0, width: "100%", height: "100%", overflow: "visible", pointerEvents: "none", zIndex: 30 }}
                 >
                   <defs>
+                    {/* Gravnet: Red y rejilla de Deadlock */}
+                    <radialGradient id="gravnet-grad" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.4" />
+                      <stop offset="100%" stopColor="#1d4ed8" stopOpacity="0.75" />
+                    </radialGradient>
+
+                    <pattern id="gravnet-grid" width="0.5" height="0.5" patternUnits="userSpaceOnUse">
+                      <path d="M 0.5 0 L 0 0 0 0.5" fill="none" stroke="rgba(255, 255, 255, 0.45)" strokeWidth="0.04" />
+                    </pattern>
+
                     {/* Viper: Verde tóxico profundo */}
                     <radialGradient id="viper-smoke-grad" cx="50%" cy="50%" r="50%">
                       <stop offset="0%" stopColor="#22c55e" stopOpacity="0.55" />
@@ -1105,7 +1118,7 @@ export default function MapsView() {
                         />
 
                         {/* Emisor (Diamante en el origen) */}
-                        <polygon points={diamondPoints} fill={sc} stroke="white" strokeWidth={0.2} style={{ pointerEvents: "none" }} />
+                        <polygon points={diamondPoints} fill={m.isDeadlockSensor ? "#ef4444" : sc} stroke="white" strokeWidth={0.2} style={{ pointerEvents: "none" }} />
 
                         {/* Control handle: Rótulo interactivo blanco en el extremo para girar 360 grados libres */}
                         <circle cx={x2} cy={y2} r={1.0} fill="white" stroke={sc} strokeWidth={0.4} style={{ cursor: "crosshair", pointerEvents: "all" }}
@@ -1115,8 +1128,8 @@ export default function MapsView() {
                       </g>
                     );
                   })}
-                  {/* Circles: smoke / molotov / slow / point */}
-                  {abilityMarkers.filter(m => ["smoke", "molotov", "slow", "point"].includes(m.archetype)).map(m => {
+                  {/* Circles: smoke / molotov / slow / point / gravnet */}
+                  {abilityMarkers.filter(m => ["smoke", "molotov", "slow", "point", "gravnet"].includes(m.archetype)).map(m => {
                     const sc = m.team === "atk" ? "var(--cyan)" : m.team === "def" ? "var(--red)" : m.strokeColor;
                     const fc = m.team === "atk" ? "rgba(0,229,209,0.28)" : m.team === "def" ? "rgba(255,70,85,0.28)" : m.fillColor;
                     const isSmoke = m.archetype === "smoke";
@@ -1155,9 +1168,9 @@ export default function MapsView() {
                               {/* Efectos y texturas específicas */}
                               {ag === "viper" && (
                                 <>
-                                  <circle cx={m.cx - m.radius * 0.25} cy={m.cy - m.radius * 0.2} r={m.radius * 0.35} fill="rgba(34,197,94,0.25)" filter="blur(0.5px)" />
-                                  <circle cx={m.cx + m.radius * 0.3} cy={m.cy + m.radius * 0.25} r={m.radius * 0.3} fill="rgba(34,197,94,0.18)" filter="blur(0.5px)" />
-                                  <circle cx={m.cx - m.radius * 0.1} cy={m.cy + m.radius * 0.35} r={m.radius * 0.2} fill="rgba(22,163,74,0.3)" filter="blur(0.5px)" />
+                                  <circle cx={m.cx - m.radius * 0.25} cy={m.cy - m.radius * 0.2} r={m.radius * 0.35} fill="rgba(34,197,94,0.25)" style={{ filter: "blur(0.5px)" }} />
+                                  <circle cx={m.cx + m.radius * 0.3} cy={m.cy + m.radius * 0.25} r={m.radius * 0.3} fill="rgba(34,197,94,0.18)" style={{ filter: "blur(0.5px)" }} />
+                                  <circle cx={m.cx - m.radius * 0.1} cy={m.cy + m.radius * 0.35} r={m.radius * 0.2} fill="rgba(22,163,74,0.3)" style={{ filter: "blur(0.5px)" }} />
                                 </>
                               )}
 
@@ -1171,7 +1184,7 @@ export default function MapsView() {
                               {ag === "miks" && (
                                 <>
                                   <circle cx={m.cx} cy={m.cy} r={m.radius * 0.8} fill="none" stroke="rgba(254,240,138,0.2)" strokeWidth={0.5} />
-                                  <circle cx={m.cx} cy={m.cy} r={m.radius * 0.2} fill="#fef08a" opacity={0.6} filter="blur(0.5px)" />
+                                  <circle cx={m.cx} cy={m.cy} r={m.radius * 0.2} fill="#fef08a" opacity={0.6} style={{ filter: "blur(0.5px)" }} />
                                 </>
                               )}
 
@@ -1208,8 +1221,8 @@ export default function MapsView() {
 
                               {ag === "jett" && (
                                 <>
-                                  <circle cx={m.cx - m.radius * 0.15} cy={m.cy - m.radius * 0.15} r={m.radius * 0.25} fill="rgba(255,255,255,0.25)" filter="blur(0.5px)" />
-                                  <circle cx={m.cx + m.radius * 0.2} cy={m.cy + m.radius * 0.2} r={m.radius * 0.2} fill="rgba(255,255,255,0.2)" filter="blur(0.5px)" />
+                                  <circle cx={m.cx - m.radius * 0.15} cy={m.cy - m.radius * 0.15} r={m.radius * 0.25} fill="rgba(255,255,255,0.25)" style={{ filter: "blur(0.5px)" }} />
+                                  <circle cx={m.cx + m.radius * 0.2} cy={m.cy + m.radius * 0.2} r={m.radius * 0.2} fill="rgba(255,255,255,0.2)" style={{ filter: "blur(0.5px)" }} />
                                   <circle cx={m.cx} cy={m.cy} r={m.radius * 0.7} fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth={0.3} strokeDasharray="5 2" />
                                 </>
                               )}
@@ -1221,7 +1234,12 @@ export default function MapsView() {
                               )}
                             </g>
                           );
-                        })() : (
+                        })() : m.archetype === "gravnet" ? (
+                          <g>
+                            <circle cx={m.cx} cy={m.cy} r={m.radius} fill="url(#gravnet-grad)" stroke={sc} strokeWidth={0.6} />
+                            <circle cx={m.cx} cy={m.cy} r={m.radius} fill="url(#gravnet-grid)" style={{ pointerEvents: "none" }} />
+                          </g>
+                        ) : (
                           // Non-smoke circular-logic abilities shown as rounded rectangles (cuadrado con bordes curvos)
                           <rect
                             x={m.cx - m.radius}
@@ -1238,6 +1256,41 @@ export default function MapsView() {
                         {!isSmoke && (
                           <image href={m.icon} x={m.cx - 2.5} y={m.cy - 2.5} width={5} height={5} style={{ pointerEvents: "none" }} />
                         )}
+                      </g>
+                    );
+                  })}
+
+                  {/* Barrier Mesh (X shape of Deadlock) */}
+                  {abilityMarkers.filter(m => m.archetype === "barrier_mesh").map(m => {
+                    const size = m.radius || 4;
+                    const x1 = m.cx - size, y1 = m.cy - size;
+                    const x2 = m.cx + size, y2 = m.cy + size;
+                    const x3 = m.cx + size, y3 = m.cy - size;
+                    const x4 = m.cx - size, y4 = m.cy + size;
+
+                    return (
+                      <g key={m.id}
+                        style={{ cursor: activeTool === "eraser" ? "cell" : activeTool === "select" ? "move" : "default", pointerEvents: "all" }}
+                        onMouseDown={e => {
+                          e.stopPropagation();
+                          if (activeTool === "eraser") { deleteElement(m.id, "ability"); return; }
+                          if (activeTool !== "select") return;
+                          setDraggingAbility({ markerId: m.id, handleType: "center" });
+                        }}
+                        onContextMenu={e => { e.preventDefault(); setContextMenu({ markerId: m.id, markerType: "ability", x: e.clientX, y: e.clientY }); }}
+                      >
+                        {/* Las dos líneas diagonales de la X */}
+                        <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#38bdf8" strokeWidth={0.8} strokeLinecap="round" />
+                        <line x1={x3} y1={y3} x2={x4} y2={y4} stroke="#38bdf8" strokeWidth={0.8} strokeLinecap="round" />
+
+                        {/* 4 puntas de color azul brillante */}
+                        <circle cx={x1} cy={y1} r={0.7} fill="#38bdf8" stroke="white" strokeWidth={0.2} />
+                        <circle cx={x2} cy={y2} r={0.7} fill="#38bdf8" stroke="white" strokeWidth={0.2} />
+                        <circle cx={x3} cy={y3} r={0.7} fill="#38bdf8" stroke="white" strokeWidth={0.2} />
+                        <circle cx={x4} cy={y4} r={0.7} fill="#38bdf8" stroke="white" strokeWidth={0.2} />
+
+                        {/* Centro blanco (emisor) */}
+                        <circle cx={m.cx} cy={m.cy} r={1.0} fill="white" stroke="#38bdf8" strokeWidth={0.4} />
                       </g>
                     );
                   })}
@@ -1261,26 +1314,76 @@ export default function MapsView() {
                       return <circle cx={g.cx} cy={g.cy} r={3.5} fill="rgba(255,255,255,0.3)" stroke="white" strokeWidth={0.4} opacity={0.5} />;
                     }
                     if (g.type === "circle") {
-                      // Note: check dragPayloadRef to see if the drag is a smoke
-                      const isSmoke = dragPayloadRef.current?.classified?.archetype === "smoke";
-                      if (isSmoke) {
-                        return <circle cx={g.cx} cy={g.cy} r={g.radius} fill={g.fillColor} stroke={g.strokeColor} strokeWidth={0.5} opacity={0.45} />;
-                      } else {
+                      const arch = g.classified?.archetype;
+                      const ag = (g.agentName || "").toLowerCase();
+
+                      if (arch === "smoke") {
+                        let fillUrl = g.fillColor;
+                        if (ag === "viper") fillUrl = "url(#viper-smoke-grad)";
+                        else if (ag === "omen") fillUrl = "url(#omen-smoke-grad)";
+                        else if (ag === "miks") fillUrl = "url(#miks-smoke-grad)";
+                        else if (ag === "harbor") fillUrl = "url(#harbor-smoke-grad)";
+                        else if (ag === "clove") fillUrl = "url(#clove-smoke-grad)";
+                        else if (ag === "astra") fillUrl = "url(#astra-smoke-grad)";
+                        else if (ag === "brimstone") fillUrl = "url(#brimstone-smoke-grad)";
+                        else if (ag === "jett") fillUrl = "url(#jett-smoke-grad)";
+                        else if (ag === "cypher") fillUrl = "url(#cypher-smoke-grad)";
+
+                        const customStroke = ag === "cypher" ? "#38bdf8" : g.strokeColor;
+
                         return (
-                          <rect
-                            x={g.cx - g.radius}
-                            y={g.cy - g.radius}
-                            width={g.radius * 2}
-                            height={g.radius * 2}
-                            rx={1.5}
-                            ry={1.5}
-                            fill={g.fillColor}
-                            stroke={g.strokeColor}
-                            strokeWidth={0.5}
-                            opacity={0.45}
-                          />
+                          <g opacity={0.6}>
+                            <circle cx={g.cx} cy={g.cy} r={g.radius} fill={fillUrl} stroke={customStroke} strokeWidth={ag === "cypher" ? 0.9 : 0.6} />
+                            {ag === "harbor" && (
+                              <circle cx={g.cx} cy={g.cy} r={g.radius * 0.88} fill="none" stroke="rgba(250,204,21,0.4)" strokeWidth={0.3} strokeDasharray="4 2" />
+                            )}
+                            {ag === "astra" && (
+                              <circle cx={g.cx} cy={g.cy} r={g.radius * 0.8} fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={0.25} />
+                            )}
+                          </g>
                         );
                       }
+
+                      if (arch === "gravnet") {
+                        return (
+                          <g opacity={0.6}>
+                            <circle cx={g.cx} cy={g.cy} r={g.radius} fill="url(#gravnet-grad)" stroke={g.strokeColor} strokeWidth={0.6} />
+                            <circle cx={g.cx} cy={g.cy} r={g.radius} fill="url(#gravnet-grid)" />
+                          </g>
+                        );
+                      }
+
+                      if (arch === "barrier_mesh") {
+                        const size = g.radius || 4;
+                        const x1 = g.cx - size, y1 = g.cy - size;
+                        const x2 = g.cx + size, y2 = g.cy + size;
+                        const x3 = g.cx + size, y3 = g.cy - size;
+                        const x4 = g.cx - size, y4 = g.cy + size;
+
+                        return (
+                          <g opacity={0.6}>
+                            <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#38bdf8" strokeWidth={0.8} />
+                            <line x1={x3} y1={y3} x2={x4} y2={y4} stroke="#38bdf8" strokeWidth={0.8} />
+                            <circle cx={g.cx} cy={g.cy} r={1.0} fill="white" stroke="#38bdf8" strokeWidth={0.4} />
+                          </g>
+                        );
+                      }
+
+                      // Otros círculos / rectángulos genéricos
+                      return (
+                        <rect
+                          x={g.cx - g.radius}
+                          y={g.cy - g.radius}
+                          width={g.radius * 2}
+                          height={g.radius * 2}
+                          rx={1.5}
+                          ry={1.5}
+                          fill={g.fillColor}
+                          stroke={g.strokeColor}
+                          strokeWidth={0.5}
+                          opacity={0.45}
+                        />
+                      );
                     }
                     if (g.type === "line") {
                       return <line x1={g.x1} y1={g.y1} x2={g.x2} y2={g.y2} stroke={g.strokeColor} strokeWidth={g.strokeWidth} opacity={0.45} strokeLinecap="round" />;
