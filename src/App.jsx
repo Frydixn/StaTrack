@@ -93,7 +93,6 @@ async function loadOrSyncPlayerProfile(name, tag) {
     console.warn("No se pudo guardar el snapshot en el proxy backend:", dbErr.message);
   }
 
-  // Guardar en búsquedas recientes de localStorage
   try {
     const savedRecent = JSON.parse(localStorage.getItem("recentPlayers") || "[]");
     const newRecentItem = {
@@ -170,7 +169,7 @@ export default function App() {
       let shouldLoadFromSnapshot = false;
       if (player && player.puuid) {
         const lastUpdated = player.last_updated ? new Date(player.last_updated).getTime() : 0;
-        const cacheDuration = 5 * 60 * 1000; // 5 minutes
+        const cacheDuration = 5 * 60 * 1000;
         if (Date.now() - lastUpdated < cacheDuration) {
           shouldLoadFromSnapshot = true;
         }
@@ -228,7 +227,6 @@ export default function App() {
         }
       }
 
-      // If cache is stale or missing, load fresh from API with snapshot fallback on error
       try {
         const result = await loadOrSyncPlayerProfile(name, tag);
         setPlayerData(result);
@@ -313,12 +311,11 @@ export default function App() {
   };
 
   const getLatestActLabel = (matches) => {
-    if (!matches || matches.length === 0) return "E11A4";
+    if (!matches || matches.length === 0) return "";
     const meta = matches[0]?.metadata;
-    if (!meta) return "E11A4";
-    // season puede ser objeto {id, short} o string o null
+    if (!meta) return "";
     if (meta.season && typeof meta.season === "object") {
-      return (meta.season.short || meta.season.id || "E11A4").toUpperCase();
+      return (meta.season.short || meta.season.id || "").toUpperCase();
     }
     if (meta.season && typeof meta.season === "string") {
       return meta.season.toUpperCase();
@@ -326,7 +323,7 @@ export default function App() {
     if (meta.season_id && typeof meta.season_id === "string") {
       return meta.season_id.toUpperCase();
     }
-    return "E11A4";
+    return "";
   };
 
   const filteredAchievements = playerData

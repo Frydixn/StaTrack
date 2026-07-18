@@ -20,7 +20,7 @@ export default function TrackerView({ playerData }) {
     setCustomStart(start);
     setCustomEnd(end);
     setDateError("");
-    
+
     const minDateLimit = new Date("2020-06-02").getTime();
     const todayLimit = new Date().setHours(23, 59, 59, 999);
 
@@ -39,13 +39,13 @@ export default function TrackerView({ playerData }) {
         return;
       }
     }
-    
+
     if (start && end) {
       const startDateObj = new Date(start);
       const endDateObj = new Date(end);
       const diffTime = endDateObj.getTime() - startDateObj.getTime();
       const diffDays = diffTime / (1000 * 60 * 60 * 24);
-      
+
       if (diffDays < 0) {
         setDateError("La fecha de inicio no puede ser posterior a la de fin.");
       } else if (diffDays > 7) {
@@ -57,7 +57,7 @@ export default function TrackerView({ playerData }) {
   const handleCustomStartSelect = (startVal) => {
     setDateError("");
     setCustomStart(startVal);
-    
+
     const minDateLimit = new Date("2020-06-02").getTime();
     if (startVal) {
       const startDateObj = new Date(startVal);
