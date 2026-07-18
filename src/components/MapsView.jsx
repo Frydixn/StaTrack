@@ -60,6 +60,19 @@ function classifyAbility(ability, agentName) {
   const ag = (agentName || "").toLowerCase();
   const colors = AGENT_COLORS[ag] || AGENT_COLORS["default"];
 
+  // Deadlock Custom Abilities
+  if (ag === "deadlock") {
+    if (name.includes("gravnet")) {
+      return { type: "gravnet", radiusM: 7.5, fill: "url(#gravnet-grad)", stroke: "#4f46e5" };
+    }
+    if (name.includes("barrier mesh") || name.includes("barrier_mesh")) {
+      return { type: "barrier_mesh", radiusM: 6.0, fill: "rgba(59,130,246,0.15)", stroke: "#3b82f6" };
+    }
+    if (name.includes("sonic sensor") || name.includes("sonic_sensor")) {
+      return { type: "sonic_sensor", radiusM: 5.5, fill: "rgba(6,182,212,0.15)", stroke: "#06b6d4" };
+    }
+  }
+
   // 1. Ult Area
   if (slot === "Ultimate" && (name.includes("lockdown") || name.includes("viper's pit") || name.includes("null/cmd"))) {
     let radiusM = 35;
@@ -150,6 +163,8 @@ export default function MapsView() {
   const [agents, setAgents] = useState([]);
   const [agentsLoading, setAgentsLoading] = useState(true);
   const [agentRoleFilter, setAgentRoleFilter] = useState("TODOS");
+  const [activeDragItem, setActiveDragItem] = useState(null);
+  const [dragPreview, setDragPreview] = useState(null);
 
   const [drawing, setDrawing] = useState(null);
   const [draggingElement, setDraggingElement] = useState(null);
@@ -304,21 +319,20 @@ export default function MapsView() {
   const dims = selectedMap ? (MAP_DIMENSIONS[selectedMap.displayName] || { widthM: 136, heightM: 124 }) : { widthM: 136, heightM: 124 };
 
   const getSvgCoords = (e) => {
-    if (!canvasRef.current) return { x: 0, y: 0 };
-    const rect = canvasRef.current.getBoundingClientRect();
-    const localX = e.clientX - rect.left;
-    const localY = e.clientY - rect.top;
-
-    const transformedX = (localX - pan.x) / zoom;
-    const transformedY = (localY - pan.y) / zoom;
-
-    const pctX = transformedX / rect.width;
-    const pctY = transformedY / rect.height;
-
-    return {
-      x: Math.max(0, Math.min(dims.widthM, pctX * dims.widthM)),
-      y: Math.max(0, Math.min(dims.heightM, pctY * dims.heightM))
-    };
+    if (!svgRef.current) return { x: 0, y: 0 };
+    try {
+      const svg = svgRef.current;
+      const point = svg.createSVGPoint();
+      point.x = e.clientX;
+      point.y = e.clientY;
+      const svgPoint = point.matrixTransform(svg.getScreenCTM().inverse());
+      return {
+        x: Math.max(0, Math.min(dims.widthM, svgPoint.x)),
+        y: Math.max(0, Math.min(dims.heightM, svgPoint.y))
+      };
+    } catch (err) {
+      return { x: 0, y: 0 };
+    }
   };
 
   // Zoom with scroll centered under mouse cursor
@@ -406,6 +420,8 @@ export default function MapsView() {
   // Drag and drop elements into whiteboard canvas
   const handleCanvasDrop = (e) => {
     e.preventDefault();
+    setActiveDragItem(null);
+    setDragPreview(null);
     const type = e.dataTransfer.getData("type");
     const { x, y } = getSvgCoords(e);
 
@@ -459,6 +475,13 @@ export default function MapsView() {
         }]);
       }
     }
+  };
+
+  const handleCanvasDragOver = (e) => {
+    e.preventDefault();
+    if (!activeDragItem) return;
+    const { x, y } = getSvgCoords(e);
+    setDragPreview({ ...activeDragItem, x, y });
   };
 
   const handleSvgMouseDown = (e) => {
@@ -542,7 +565,8 @@ export default function MapsView() {
           <div
             ref={canvasRef}
             className="stratboard-canvas-wrap"
-            onDragOver={(e) => e.preventDefault()}
+            onDragOver={handleCanvasDragOver}
+            onDragLeave={() => setDragPreview(null)}
             onDrop={handleCanvasDrop}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
@@ -597,15 +621,69 @@ export default function MapsView() {
                       <circle cx={ag.cx} cy={ag.cy} r={2.8} />
                     </clipPath>
                   ))}
+                  {dragPreview && dragPreview.type === "agent" && (
+                    <clipPath id={`clip-drag-preview-${dragPreview.agentUuid}`}>
+                      <circle cx={dragPreview.x} cy={dragPreview.y} r={2.8} />
+                    </clipPath>
+                  )}
+                  <radialGradient id="gravnet-grad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#818cf8" stopOpacity={0.15} />
+                    <stop offset="70%" stopColor="#4f46e5" stopOpacity={0.25} />
+                    <stop offset="100%" stopColor="#312e81" stopOpacity={0.4} />
+                  </radialGradient>
+                  <pattern id="gravnet-grid" width={0.5} height={0.5} patternUnits="userSpaceOnUse">
+                    <path d="M 0.5 0 L 0 0 0 0.5" fill="none" stroke="#6366f1" strokeWidth={0.04} strokeOpacity={0.4} />
+                  </pattern>
+                  {/* Smoke Gradients from 7/8/2026 */}
+                  <radialGradient id="viper-smoke-grad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.15} />
+                    <stop offset="65%" stopColor="#047857" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#064e3b" stopOpacity={0.65} />
+                  </radialGradient>
+                  <radialGradient id="omen-smoke-grad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#6d28d9" stopOpacity={0.15} />
+                    <stop offset="70%" stopColor="#4c1d95" stopOpacity={0.45} />
+                    <stop offset="100%" stopColor="#1e1b4b" stopOpacity={0.7} />
+                  </radialGradient>
+                  <radialGradient id="clove-smoke-grad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#f472b6" stopOpacity={0.2} />
+                    <stop offset="60%" stopColor="#c084fc" stopOpacity={0.4} />
+                    <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.6} />
+                  </radialGradient>
+                  <radialGradient id="harbor-smoke-grad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.15} />
+                    <stop offset="75%" stopColor="#0369a1" stopOpacity={0.4} />
+                    <stop offset="100%" stopColor="#0f172a" stopOpacity={0.6} />
+                  </radialGradient>
+                  <radialGradient id="astra-smoke-grad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#d946ef" stopOpacity={0.15} />
+                    <stop offset="60%" stopColor="#701a75" stopOpacity={0.5} />
+                    <stop offset="100%" stopColor="#0f172a" stopOpacity={0.7} />
+                  </radialGradient>
+                  <radialGradient id="brimstone-smoke-grad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#f97316" stopOpacity={0.15} />
+                    <stop offset="70%" stopColor="#c2410c" stopOpacity={0.4} />
+                    <stop offset="100%" stopColor="#431407" stopOpacity={0.65} />
+                  </radialGradient>
+                  <radialGradient id="jett-smoke-grad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#e2e8f0" stopOpacity={0.25} />
+                    <stop offset="80%" stopColor="#cbd5e1" stopOpacity={0.45} />
+                    <stop offset="100%" stopColor="#64748b" stopOpacity={0.65} />
+                  </radialGradient>
+                  <radialGradient id="cypher-smoke-grad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#94a3b8" stopOpacity={0.15} />
+                    <stop offset="75%" stopColor="#475569" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#0f172a" stopOpacity={0.6} />
+                  </radialGradient>
                 </defs>
 
                 {/* Placed Abilities */}
                 {placedAbilities.map(ab => {
-                  if (["smoke", "molotov", "slow", "ult_area", "flash", "point"].includes(ab.type)) {
+                  if (["smoke", "molotov", "slow", "ult_area", "flash", "point", "gravnet", "barrier_mesh", "sonic_sensor"].includes(ab.type)) {
                     return (
                       <g
                         key={ab.uid}
-                        style={{ cursor: activeTool === "eraser" ? "pointer" : "grab" }}
+                        style={{ cursor: activeTool === "eraser" ? "pointer" : "grab", pointerEvents: "all" }}
                         onMouseDown={(e) => {
                           e.stopPropagation();
                           if (activeTool === "eraser") {
@@ -627,9 +705,79 @@ export default function MapsView() {
                           e.dataTransfer.setData("elementType", "ability");
                         }}
                       >
-                        <circle cx={ab.cx} cy={ab.cy} r={ab.radiusM}
-                          fill={ab.fill} stroke={ab.stroke} strokeWidth={0.3}
-                          strokeDasharray={ab.type === "smoke" ? "2 1" : "none"} />
+                        {ab.type === "gravnet" ? (
+                          <>
+                            <circle cx={ab.cx} cy={ab.cy} r={ab.radiusM} fill="url(#gravnet-grad)" stroke={ab.stroke} strokeWidth={0.3} />
+                            <circle cx={ab.cx} cy={ab.cy} r={ab.radiusM} fill="url(#gravnet-grid)" style={{ pointerEvents: "none" }} />
+                          </>
+                        ) : ab.type === "barrier_mesh" ? (() => {
+                          const r = ab.radiusM || 6;
+                          return (
+                            <>
+                              <circle cx={ab.cx} cy={ab.cy} r={r} fill="rgba(59, 130, 246, 0.12)" stroke={ab.stroke} strokeWidth={0.3} />
+                              <line x1={ab.cx - r} y1={ab.cy - r} x2={ab.cx + r} y2={ab.cy + r} stroke="#3b82f6" strokeWidth={0.6} strokeOpacity={0.65} />
+                              <line x1={ab.cx + r} y1={ab.cy - r} x2={ab.cx - r} y2={ab.cy + r} stroke="#3b82f6" strokeWidth={0.6} strokeOpacity={0.65} />
+                              <circle cx={ab.cx} cy={ab.cy} r={0.7} fill="#ffffff" stroke="#3b82f6" strokeWidth={0.3} />
+                              <circle cx={ab.cx - r} cy={ab.cy - r} r={0.4} fill="#2563eb" />
+                              <circle cx={ab.cx + r} cy={ab.cy - r} r={0.4} fill="#2563eb" />
+                              <circle cx={ab.cx - r} cy={ab.cy + r} r={0.4} fill="#2563eb" />
+                              <circle cx={ab.cx + r} cy={ab.cy + r} r={0.4} fill="#2563eb" />
+                            </>
+                          );
+                        })() : ab.type === "sonic_sensor" ? (
+                          <>
+                            <circle cx={ab.cx} cy={ab.cy} r={ab.radiusM} fill={ab.fill} stroke={ab.stroke} strokeWidth={0.4} />
+                            <circle cx={ab.cx} cy={ab.cy} r={0.6} fill="#ef4444" stroke="#ffffff" strokeWidth={0.2} />
+                          </>
+                        ) : ab.type === "smoke" ? (() => {
+                          const agObj = agents.find(a => a.uuid === ab.agentUuid);
+                          const ag = agObj ? agObj.displayName.toLowerCase() : "";
+                          
+                          let fillUrl = ab.fill;
+                          if (ag === "viper") fillUrl = "url(#viper-smoke-grad)";
+                          else if (ag === "omen") fillUrl = "url(#omen-smoke-grad)";
+                          else if (ag === "clove") fillUrl = "url(#clove-smoke-grad)";
+                          else if (ag === "harbor") fillUrl = "url(#harbor-smoke-grad)";
+                          else if (ag === "astra") fillUrl = "url(#astra-smoke-grad)";
+                          else if (ag === "brimstone") fillUrl = "url(#brimstone-smoke-grad)";
+                          else if (ag === "jett") fillUrl = "url(#jett-smoke-grad)";
+                          else if (ag === "cypher") fillUrl = "url(#cypher-smoke-grad)";
+
+                          const customStroke = ag === "cypher" ? "#38bdf8" : ab.stroke;
+
+                          return (
+                            <>
+                              <circle
+                                cx={ab.cx}
+                                cy={ab.cy}
+                                r={ab.radiusM}
+                                fill={fillUrl}
+                                stroke={customStroke}
+                                strokeWidth={ag === "cypher" ? 0.9 : 0.3}
+                                strokeDasharray="2 1"
+                                style={{ filter: "blur(0.5px)" }}
+                              />
+                              {ag === "harbor" && (
+                                <circle cx={ab.cx} cy={ab.cy} r={ab.radiusM * 0.88} fill="none" stroke="rgba(250,204,21,0.4)" strokeWidth={0.2} strokeDasharray="4 2" />
+                              )}
+                              {ag === "astra" && (
+                                <circle cx={ab.cx} cy={ab.cy} r={ab.radiusM * 0.8} fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={0.2} />
+                              )}
+                            </>
+                          );
+                        })() : (
+                          <rect
+                            x={ab.cx - ab.radiusM}
+                            y={ab.cy - ab.radiusM}
+                            width={ab.radiusM * 2}
+                            height={ab.radiusM * 2}
+                            rx={1.5}
+                            ry={1.5}
+                            fill={ab.fill}
+                            stroke={ab.stroke}
+                            strokeWidth={0.3}
+                          />
+                        )}
                         <image href={ab.icon}
                           x={ab.cx - 1.8} y={ab.cy - 1.8} width={3.6} height={3.6}
                           style={{ pointerEvents: "none" }} />
@@ -675,7 +823,7 @@ export default function MapsView() {
                         <line x1={ab.x1} y1={ab.y1} x2={ab.x2} y2={ab.y2} stroke={ab.stroke} strokeWidth={ab.widthM}
                           strokeLinecap="round"
                           strokeDasharray={isWire ? "0.5 0.3" : "none"}
-                          style={{ cursor: activeTool === "eraser" ? "pointer" : "move" }}
+                          style={{ cursor: activeTool === "eraser" ? "pointer" : "move", pointerEvents: "all" }}
                           onMouseDown={(e) => {
                             e.stopPropagation();
                             if (activeTool === "eraser") {
@@ -748,7 +896,7 @@ export default function MapsView() {
                       x={ag.cx - 2.8} y={ag.cy - 2.8}
                       width={5.6} height={5.6}
                       clipPath={`url(#clip-${ag.uid})`}
-                      style={{ cursor: activeTool === "eraser" ? "pointer" : "grab" }}
+                      style={{ cursor: activeTool === "eraser" ? "pointer" : "grab", pointerEvents: "all" }}
                       draggable={activeTool === "move"}
                       onDragStart={(e) => {
                         e.dataTransfer.setData("elementUid", ag.uid);
@@ -794,7 +942,7 @@ export default function MapsView() {
                   return (
                     <g
                       key={arrow.uid}
-                      style={{ cursor: activeTool === "eraser" ? "pointer" : "default" }}
+                      style={{ cursor: activeTool === "eraser" ? "pointer" : "default", pointerEvents: "all" }}
                       onClick={(e) => {
                         if (activeTool === "eraser") {
                           e.stopPropagation();
@@ -817,7 +965,7 @@ export default function MapsView() {
                   return (
                     <g
                       key={shape.uid}
-                      style={{ cursor: activeTool === "eraser" ? "pointer" : "default" }}
+                      style={{ cursor: activeTool === "eraser" ? "pointer" : "default", pointerEvents: "all" }}
                       onClick={(e) => {
                         if (activeTool === "eraser") {
                           e.stopPropagation();
@@ -849,7 +997,7 @@ export default function MapsView() {
                     fontSize="3.5"
                     fontFamily="Rajdhani, sans-serif"
                     dominantBaseline="middle"
-                    style={{ cursor: activeTool === "eraser" ? "pointer" : (activeTool === "move" ? "move" : "default"), userSelect: "none" }}
+                    style={{ cursor: activeTool === "eraser" ? "pointer" : (activeTool === "move" ? "move" : "default"), userSelect: "none", pointerEvents: "all" }}
                     onMouseDown={(e) => {
                       e.stopPropagation();
                       if (activeTool === "eraser") {
@@ -907,6 +1055,76 @@ export default function MapsView() {
                     </g>
                   );
                 })()}
+
+                {/* Drag and Drop Ghost Preview */}
+                {dragPreview && (
+                  <g opacity={0.6} style={{ pointerEvents: "none" }}>
+                    {dragPreview.type === "agent" ? (
+                      <>
+                        <circle cx={dragPreview.x} cy={dragPreview.y} r={2.8} fill="#0a0e17" stroke="rgba(255,255,255,0.4)" strokeWidth={0.4} />
+                        <image
+                          href={dragPreview.agentIcon}
+                          x={dragPreview.x - 2.8}
+                          y={dragPreview.y - 2.8}
+                          width={5.6}
+                          height={5.6}
+                          clipPath={`url(#clip-drag-preview-${dragPreview.agentUuid})`}
+                        />
+                      </>
+                    ) : (() => {
+                      const arch = dragPreview.archetype;
+                      const rad = arch?.radiusM || 5;
+                      const fillVal = arch?.fill || "rgba(100,116,139,0.3)";
+                      const strokeVal = arch?.stroke || "#64748b";
+                      const isSmoke = arch?.type === "smoke";
+                      
+                      return (
+                        <>
+                          {arch?.type === "gravnet" ? (
+                            <>
+                              <circle cx={dragPreview.x} cy={dragPreview.y} r={rad} fill="url(#gravnet-grad)" stroke={strokeVal} strokeWidth={0.3} />
+                              <circle cx={dragPreview.x} cy={dragPreview.y} r={rad} fill="url(#gravnet-grid)" />
+                            </>
+                          ) : arch?.type === "barrier_mesh" ? (
+                            <>
+                              <circle cx={dragPreview.x} cy={dragPreview.y} r={rad} fill="rgba(59, 130, 246, 0.12)" stroke={strokeVal} strokeWidth={0.3} />
+                              <line x1={dragPreview.x - rad} y1={dragPreview.y - rad} x2={dragPreview.x + rad} y2={dragPreview.y + rad} stroke="#3b82f6" strokeWidth={0.6} strokeOpacity={0.65} />
+                              <line x1={dragPreview.x + rad} y1={dragPreview.y - rad} x2={dragPreview.x - rad} y2={dragPreview.y + rad} stroke="#3b82f6" strokeWidth={0.6} strokeOpacity={0.65} />
+                              <circle cx={dragPreview.x} cy={dragPreview.y} r={0.7} fill="#ffffff" stroke="#3b82f6" strokeWidth={0.3} />
+                              <circle cx={dragPreview.x - rad} cy={dragPreview.y - rad} r={0.4} fill="#2563eb" />
+                              <circle cx={dragPreview.x + rad} cy={dragPreview.y - rad} r={0.4} fill="#2563eb" />
+                              <circle cx={dragPreview.x - rad} cy={dragPreview.y + rad} r={0.4} fill="#2563eb" />
+                              <circle cx={dragPreview.x + rad} cy={dragPreview.y + rad} r={0.4} fill="#2563eb" />
+                            </>
+                          ) : arch?.type === "sonic_sensor" ? (
+                            <>
+                              <circle cx={dragPreview.x} cy={dragPreview.y} r={rad} fill={fillVal} stroke={strokeVal} strokeWidth={0.4} />
+                              <circle cx={dragPreview.x} cy={dragPreview.y} r={0.6} fill="#ef4444" stroke="#ffffff" strokeWidth={0.2} />
+                            </>
+                          ) : (
+                            <circle
+                              cx={dragPreview.x}
+                              cy={dragPreview.y}
+                              r={rad}
+                              fill={fillVal}
+                              stroke={strokeVal}
+                              strokeWidth={0.3}
+                              strokeDasharray={isSmoke ? "2 1" : "none"}
+                              style={isSmoke ? { filter: "blur(0.5px)" } : {}}
+                            />
+                          )}
+                          <image
+                            href={dragPreview.abilityIcon}
+                            x={dragPreview.x - 1.8}
+                            y={dragPreview.y - 1.8}
+                            width={3.6}
+                            height={3.6}
+                          />
+                        </>
+                      );
+                    })()}
+                  </g>
+                )}
               </svg>
             </div>
 
@@ -1060,10 +1278,25 @@ export default function MapsView() {
                         className={`agent-grid-btn ${selectedAgentUuid === agent.uuid ? "selected" : ""}`}
                         draggable={true}
                         onDragStart={(e) => {
+                          const dragImg = new Image();
+                          dragImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+                          e.dataTransfer.setDragImage(dragImg, 0, 0);
+
+                          setActiveDragItem({
+                            type: "agent",
+                            agentUuid: agent.uuid,
+                            agentName: agent.displayName,
+                            agentIcon: agent.displayIcon
+                          });
+
                           e.dataTransfer.setData("type", "agent");
                           e.dataTransfer.setData("agentUuid", agent.uuid);
                           e.dataTransfer.setData("agentName", agent.displayName);
                           e.dataTransfer.setData("agentIcon", agent.displayIcon);
+                        }}
+                        onDragEnd={() => {
+                          setActiveDragItem(null);
+                          setDragPreview(null);
                         }}
                         onClick={() => setSelectedAgentUuid(prev => prev === agent.uuid ? null : agent.uuid)}
                       >
@@ -1110,11 +1343,27 @@ export default function MapsView() {
                         className="ability-card"
                         draggable={true}
                         onDragStart={(e) => {
+                          const dragImg = new Image();
+                          dragImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+                          e.dataTransfer.setDragImage(dragImg, 0, 0);
+
+                          setActiveDragItem({
+                            type: "ability",
+                            agentUuid: selectedAgent.uuid,
+                            abilityName: ability.displayName,
+                            abilityIcon: ability.displayIcon,
+                            archetype: cl
+                          });
+
                           e.dataTransfer.setData("type", "ability");
                           e.dataTransfer.setData("agentUuid", selectedAgent.uuid);
                           e.dataTransfer.setData("abilityName", ability.displayName);
                           e.dataTransfer.setData("abilityIcon", ability.displayIcon);
                           e.dataTransfer.setData("archetype", JSON.stringify(cl));
+                        }}
+                        onDragEnd={() => {
+                          setActiveDragItem(null);
+                          setDragPreview(null);
                         }}
                       >
                         <img src={ability.displayIcon} alt={ability.displayName} />
