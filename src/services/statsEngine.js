@@ -278,7 +278,11 @@ export async function syncPlayerMatches(region, name, tag, puuid, existingMatchI
       match_data: m,
     }));
     try {
-      await axios.post(`${API_BASE}/api/db/matches`, rowsToInsert);
+      // Mandar de a 10:
+      for (let i = 0; i < rowsToInsert.length; i += 10) {
+        const batch = rowsToInsert.slice(i, i + 10);
+        await axios.post(`${API_BASE}/api/db/matches`, batch);
+      }
     } catch (err) {
       console.warn("Error al guardar partidas en el proxy backend:", err.message);
     }
