@@ -97,3 +97,72 @@ export function calculateAgentStatsByPlayer(matches, puuid) {
     })
     .sort((a, b) => b.games - a.games);
 }
+
+/**
+ * Calcula la sinergia de todas las parejas (dúos) posibles dentro del roster activo.
+ * @param {Array} matches - Historial de partidas.
+ * @param {Object} roster - Roster activo.
+ * @returns {Array} - Dúos con su winrate y partidas jugadas juntos.
+ */
+export function calculateAllRosterPairs(matches, roster) {
+  if (!matches || !roster || !roster.players || roster.players.length < 2) {
+    return [];
+  }
+
+  const rosterPuuids = new Set(roster.players.map((p) => p.puuid));
+  const pairMap = {};
+
+  for (const match of matches) {
+    const players = match.players?.all_players || [];
+    
+    // Filtrar los miembros del roster que están en esta partida
+    const membersInMatch = players.filter((p) => rosterPuuids.has(p.puuid));
+    if (membersInMatch.length < 2) continue;
+
+    // Agrupar por bando
+    const redMembers = membersInMatch.filter((p) => p.team?.toLowerCase() === "red");
+    const blueMembers = membersInMatch.filter((p) => p.team?.toLowerCase() === "blue");
+
+    const processTeam = (teamMembers, teamColor) => {
+      if (teamMembers.length < 2) return;
+      const won = match.teams?.[teamColor]?.has_won ?? false;
+
+      for (let i = 0; i < teamMembers.length; i++) {
+        for (let j = i + 1; j < teamMembers.length; j++) {
+          const p1 = teamMembers[i];
+          const p2 = teamMembers[j];
+          
+          const key = p1.puuid < p2.puuid ? `${p1.puuid}_${p2.puuid}` : `${p2.puuid}_${p1.puuid}`;
+          
+          if (!pairMap[key]) {
+            pairMap[key] = {
+              key,
+              p1Puuid: p1.puuid,
+              p1RiotId: `${p1.name}#${p1.tag}`,
+              p2Puuid: p2.puuid,
+              p2RiotId: `${p2.name}#${p2.tag}`,
+              games: 0,
+              wins: 0
+            };
+          }
+          
+          pairMap[key].games += 1;
+          if (won) {
+            pairMap[key].wins += 1;
+          }
+        }
+      }
+    };
+
+    processTeam(redMembers, "red");
+    processTeam(blueMembers, "blue");
+  }
+
+  return Object.values(pairMap)
+    .map((pair) => ({
+      ...pair,
+      winrate: pair.games > 0 ? Math.round((pair.wins / pair.games) * 100) : 0
+    }))
+    .sort((a, b) => b.games - a.games || b.winrate - a.winrate);
+}
+
