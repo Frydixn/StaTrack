@@ -180,9 +180,6 @@ export default function App() {
         const { data: snapshot } = await axios.get(`${API_BASE}/api/db/stats/${encodeURIComponent(player.puuid)}`);
 
         if (snapshot?.stats) {
-          const achievements = evaluateAchievements(snapshot.stats);
-          const unlockedCount = achievements.filter((a) => a.unlocked).length;
-
           let matches = [];
           try {
             const { data: storedMatchesRaw } = await axios.get(`${API_BASE}/api/db/matches/${encodeURIComponent(player.puuid)}`);
@@ -211,14 +208,17 @@ export default function App() {
             }
           }
 
-          snapshot.stats.trend = snapshot.stats.trend || [];
+          const mmrObj = snapshot.stats.mmr || null;
+          const freshStats = aggregateStats(player, mmrObj, matches);
+          const achievements = evaluateAchievements(freshStats);
+          const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
           setPlayerData({
             account: {
               puuid: player.puuid, name: player.name, tag: player.tag, region: player.region, account_level: player.account_level,
-              card: snapshot.stats.accountCard || null
+              card: freshStats.accountCard || null
             },
-            stats: snapshot.stats, actStats: snapshot.stats.actStats || null, mmrHistory: [],
+            stats: freshStats, actStats: freshStats.actStats || null, mmrHistory: [],
             achievements,
             matches,
             summary: { total: achievements.length, unlocked: unlockedCount, percent: Math.round((unlockedCount / achievements.length) * 100) },
@@ -237,9 +237,6 @@ export default function App() {
           const { data: snapshot } = await axios.get(`${API_BASE}/api/db/stats/${encodeURIComponent(player.puuid)}`);
 
           if (snapshot?.stats) {
-            const achievements = evaluateAchievements(snapshot.stats);
-            const unlockedCount = achievements.filter((a) => a.unlocked).length;
-
             let matches = [];
             try {
               const { data: storedMatchesRaw } = await axios.get(`${API_BASE}/api/db/matches/${encodeURIComponent(player.puuid)}`);
@@ -251,14 +248,17 @@ export default function App() {
               console.warn("Error leyendo partidas de la base de datos para fallback de error:", e.message);
             }
 
-            snapshot.stats.trend = snapshot.stats.trend || [];
+            const mmrObj = snapshot.stats.mmr || null;
+            const freshStats = aggregateStats(player, mmrObj, matches);
+            const achievements = evaluateAchievements(freshStats);
+            const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
             setPlayerData({
               account: {
                 puuid: player.puuid, name: player.name, tag: player.tag, region: player.region, account_level: player.account_level,
-                card: snapshot.stats.accountCard || null
+                card: freshStats.accountCard || null
               },
-              stats: snapshot.stats, actStats: snapshot.stats.actStats || null, mmrHistory: [],
+              stats: freshStats, actStats: freshStats.actStats || null, mmrHistory: [],
               achievements,
               matches,
               summary: { total: achievements.length, unlocked: unlockedCount, percent: Math.round((unlockedCount / achievements.length) * 100) },

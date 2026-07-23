@@ -6,6 +6,7 @@ import AgentRoleBreakdown from "./AgentRoleBreakdown";
 import useRosterStorage from "../hooks/useRosterStorage";
 import useSynergyMatrix from "../hooks/useSynergyMatrix";
 import axios from "axios";
+import { syncPlayerMatches } from "../services/statsEngine";
 import { UserPlus, ShieldAlert, Award, Sparkles, Trash2 } from "lucide-react";
 
 export default function RosterView({ playerData }) {
@@ -27,6 +28,10 @@ export default function RosterView({ playerData }) {
   const [adding, setAdding] = useState(false);
   const [activeSubTab, setActiveSubTab] = useState("synergy"); // "synergy" | "agents"
 
+  const [analysisPuuid, setAnalysisPuuid] = useState("");
+  const [analysisMatches, setAnalysisMatches] = useState([]);
+  const [loadingAnalysis, setLoadingAnalysis] = useState(false);
+
   // Select first roster as default if available
   useEffect(() => {
     if (rosters.length > 0 && !activeRosterId) {
@@ -36,10 +41,58 @@ export default function RosterView({ playerData }) {
 
   const activeRoster = rosters.find((r) => r.id === activeRosterId);
 
-  // Hook for synergy matrix calculations
+  // Auto-set the analysis player when roster or active searched player changes
+  useEffect(() => {
+    if (activeRoster) {
+      const hasActive = activeRoster.players.some(p => p.puuid === activePlayer?.puuid);
+      if (hasActive) {
+        setAnalysisPuuid(activePlayer.puuid);
+      } else if (activeRoster.players.length > 0) {
+        setAnalysisPuuid(activeRoster.players[0].puuid);
+      } else {
+        setAnalysisPuuid(activePlayer?.puuid || "");
+      }
+    } else {
+      setAnalysisPuuid(activePlayer?.puuid || "");
+    }
+  }, [activeRosterId, activePlayer]);
+
+  // Load matches for the analysis focus player
+  useEffect(() => {
+    if (!analysisPuuid) {
+      setAnalysisMatches([]);
+      return;
+    }
+
+    if (analysisPuuid === activePlayer?.puuid) {
+      setAnalysisMatches(playerData?.matches || []);
+      return;
+    }
+
+    setLoadingAnalysis(true);
+    axios.get(`${API_BASE}/api/db/matches/${encodeURIComponent(analysisPuuid)}`)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          const parsed = data.map((row) => row.match_data) || [];
+          parsed.sort((a, b) => (b.metadata?.game_start || 0) - (a.metadata?.game_start || 0));
+          setAnalysisMatches(parsed);
+        } else {
+          setAnalysisMatches([]);
+        }
+      })
+      .catch((err) => {
+        console.warn("No se pudieron cargar partidas del jugador foco:", err);
+        setAnalysisMatches([]);
+      })
+      .finally(() => {
+        setLoadingAnalysis(false);
+      });
+  }, [analysisPuuid, playerData?.matches]);
+
+  // Hook for synergy matrix calculations using analysisMatches/analysisPuuid
   const { synergyPairs, rosterSynergy, rosterAgentStats } = useSynergyMatrix(
-    playerData?.matches || [],
-    activePlayer?.puuid,
+    analysisMatches,
+    analysisPuuid,
     activeRoster
   );
 
@@ -53,6 +106,50 @@ export default function RosterView({ playerData }) {
       });
     }
   }, [activeRosterId, activeRoster]);
+
+  const handleSyncAnalysisPlayer = async () => {
+    const playerObj = activeRoster?.players?.find(p => p.puuid === analysisPuuid);
+    if (!playerObj) return;
+
+    setLoadingAnalysis(true);
+    setAddError("");
+
+    try {
+      const [name, tag] = playerObj.riotId.split("#");
+
+      // 1. Get account to know region
+      const accountUrl = `${API_BASE}/api/account/${encodeURIComponent(name.trim())}/${encodeURIComponent(tag.trim())}`;
+      const { data: accountResp } = await axios.get(accountUrl);
+      const region = accountResp?.data?.region || "na";
+
+      // 2. Fetch existing match IDs from DB to avoid duplicating
+      let existingMatchIdsSet = new Set();
+      try {
+        const { data: storedMatchesRaw } = await axios.get(`${API_BASE}/api/db/matches/${encodeURIComponent(analysisPuuid)}`);
+        if (storedMatchesRaw && storedMatchesRaw.length > 0) {
+          existingMatchIdsSet = new Set(storedMatchesRaw.map((row) => row.match_id));
+        }
+      } catch (err) {
+        console.warn(err);
+      }
+
+      // 3. Sync matches
+      await syncPlayerMatches(region, name.trim(), tag.trim(), analysisPuuid, existingMatchIdsSet);
+
+      // 4. Reload from database
+      const { data: allStoredMatchesRaw } = await axios.get(`${API_BASE}/api/db/matches/${encodeURIComponent(analysisPuuid)}`);
+      if (allStoredMatchesRaw) {
+        const parsed = allStoredMatchesRaw.map((row) => row.match_data) || [];
+        parsed.sort((a, b) => (b.metadata?.game_start || 0) - (a.metadata?.game_start || 0));
+        setAnalysisMatches(parsed);
+      }
+    } catch (err) {
+      console.error(err);
+      setAddError("Fallo al sincronizar partidas de la API de Valorant.");
+    } finally {
+      setLoadingAnalysis(false);
+    }
+  };
 
   const handleAddPlayer = async (e) => {
     if (e) e.preventDefault();
@@ -269,8 +366,71 @@ export default function RosterView({ playerData }) {
               </div>
             </div>
 
+            {/* Focus player selector for coaches */}
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              background: "rgba(255,255,255,0.01)",
+              border: "1px solid var(--line)",
+              padding: "10px 16px",
+              borderRadius: "6px",
+              marginTop: "10px"
+            }}>
+              <span className="font-oswald" style={{ color: "var(--text-dim)", fontSize: "11px", letterSpacing: "0.5px" }}>
+                JUGADOR BASE (FOCO DE ANÁLISIS):
+              </span>
+              <select
+                value={analysisPuuid}
+                onChange={(e) => setAnalysisPuuid(e.target.value)}
+                className="font-oswald"
+                style={{
+                  background: "var(--bg)",
+                  border: "1px solid var(--line)",
+                  borderRadius: "4px",
+                  color: "white",
+                  padding: "6px 12px",
+                  fontSize: "12px",
+                  outline: "none",
+                  cursor: "pointer",
+                  minWidth: "200px"
+                }}
+              >
+                {activeRoster.players.map((p) => (
+                  <option key={p.puuid} value={p.puuid}>
+                    {p.riotId} {p.puuid === activePlayer?.puuid ? "(Tú)" : ""}
+                  </option>
+                ))}
+              </select>
+              {loadingAnalysis && (
+                <span style={{ fontSize: "11px", color: "var(--red)", fontStyle: "italic" }}>
+                  Cargando historial de partidas...
+                </span>
+              )}
+              {!loadingAnalysis && analysisMatches.length === 0 && analysisPuuid && (
+                <button
+                  type="button"
+                  onClick={handleSyncAnalysisPlayer}
+                  className="font-oswald"
+                  style={{
+                    background: "var(--red)",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "6px 12px",
+                    color: "white",
+                    fontSize: "11px",
+                    cursor: "pointer",
+                    fontWeight: "bold",
+                    textTransform: "uppercase"
+                  }}
+                >
+                  Sincronizar Partidas de este Jugador
+                </button>
+              )}
+            </div>
+
             {/* Tabs for analysis */}
-            <div style={{ display: "flex", borderBottom: "1px solid var(--line)", gap: "16px" }}>
+            <div style={{ display: "flex", borderBottom: "1px solid var(--line)", gap: "16px", marginTop: "10px" }}>
               <button
                 onClick={() => setActiveSubTab("synergy")}
                 className="font-oswald"
