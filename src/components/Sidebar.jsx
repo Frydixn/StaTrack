@@ -126,6 +126,7 @@ export default function Sidebar({ activeTab, setActiveTab, playerData, onSearch,
   const navItems = [
     { id: "tracker", label: "Tracker", icon: BarChart2, desc: "Análisis y mejora", disabled: !playerData, tooltip: !playerData ? "Buscá un Riot ID primero" : undefined },
     { id: "achievements", label: "Logros", icon: Award, desc: "Trayectoria completa", disabled: !playerData, tooltip: !playerData ? "Buscá un Riot ID primero" : undefined },
+    { id: "roster", label: "Roster", icon: Users, desc: "Sinergia de equipos", disabled: !playerData, tooltip: !playerData ? "Buscá un Riot ID primero" : undefined },
     { id: "compare", label: "Comparar", icon: Swords, desc: "vs amigos y pros", disabled: false, tooltip: undefined },
     { id: "maps", label: "Mapas", icon: Map, desc: "Rotación y detalles", disabled: false, tooltip: undefined },
   ];

@@ -11,6 +11,7 @@ import Sidebar from "./components/Sidebar";
 import TrackerView from "./components/TrackerView";
 import MapsView from "./components/MapsView";
 import CompareView from "./components/CompareView";
+import RosterView from "./components/RosterView";
 import axios from "axios";
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 import {
@@ -376,24 +377,27 @@ export default function App() {
 
               {!loading && !error && activeTab !== "compare" && playerData && (
                 <div className="results-container">
-                  <PlayerProfileBar
-                    account={playerData.account}
-                    stats={playerData.stats}
-                    latestAct={getLatestActLabel(playerData.matches)}
-                    matches={playerData.matches}
-                    summary={playerData.summary}
-                    onRefresh={handleRefresh}
-                    refreshing={refreshing}
-                    onGoToTracker={() => setActiveTab("tracker")}
-                  />
-
-                  {activeTab === "tracker" && (
+                   {activeTab === "tracker" && (
                     <>
+                      <PlayerProfileBar
+                        account={playerData.account}
+                        stats={playerData.stats}
+                        latestAct={getLatestActLabel(playerData.matches)}
+                        matches={playerData.matches}
+                        summary={playerData.summary}
+                        onRefresh={handleRefresh}
+                        refreshing={refreshing}
+                        onGoToTracker={() => setActiveTab("tracker")}
+                      />
                       {playerData.stats.agentsByMap && Object.keys(playerData.stats.agentsByMap).length > 0 && (
                         <MapAgentsPanel agentsByMap={playerData.stats.agentsByMap} />
                       )}
                       <TrackerView playerData={playerData} />
                     </>
+                  )}
+
+                  {activeTab === "roster" && (
+                    <RosterView playerData={playerData} />
                   )}
 
                   {activeTab === "achievements" && (
