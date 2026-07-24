@@ -308,7 +308,6 @@
     "attacker": "ATTACKER",
     "defender": "DEFENDER",
     "title_mis_rosters": "MY ROSTERS",
-    "placeholder_name": "Roster Name...",
     "no_rosters_created": "You have no rosters created.",
     "players_count": "{{count}} players"
   },

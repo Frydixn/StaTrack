@@ -76,7 +76,7 @@
     "level": "LVL {{level}}",
     "region": "Región: {{region}}",
     "rank_current": "RANGO ACTUAL",
-    "rank_peak": "PICO",
+    "rank_peak": "MÁS ALTO",
     "unranked": "Sin clasificar",
     "rr": "{{rr}} RR",
     "elo": "ELO {{elo}}",
