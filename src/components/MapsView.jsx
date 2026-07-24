@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Compass, Info, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 // ── CONSTANTS ───────────────────────────────────────────────────────────────
 const MAP_DIMENSIONS = {
@@ -43,13 +44,6 @@ const AGENT_COLORS = {
   "iso": { fill: "rgba(99,102,241,0.45)", stroke: "#6366f1" },
   "vyse": { fill: "rgba(20,184,166,0.45)", stroke: "#14b8a6" },
   "default": { fill: "rgba(100,116,139,0.40)", stroke: "#64748b" }
-};
-
-const TOOL_NAMES = {
-  arrow: "FLECHA",
-  shape: "FORMA",
-  text: "TEXTO",
-  eraser: "BORRADOR",
 };
 
 // ── CLASSIFY ABILITY ────────────────────────────────────────────────────────
@@ -136,6 +130,14 @@ function classifyAbility(ability, agentName) {
 }
 
 export default function MapsView() {
+  const { t } = useTranslation();
+  const TOOL_NAMES = {
+    arrow: t("maps.tool_arrow"),
+    shape: t("maps.tool_shape"),
+    text: t("maps.tool_text"),
+    eraser: t("maps.tool_eraser"),
+  };
+
   // Map list states (Preserved)
   const [maps, setMaps] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1161,7 +1163,7 @@ export default function MapsView() {
             {/* Active Tool Indicator */}
             {activeTool !== "move" && (
               <div className="active-tool-indicator">
-                MODO: {TOOL_NAMES[activeTool] || activeTool.toUpperCase()} — ESC para cancelar
+                {t("maps.tool_indicator", { tool: TOOL_NAMES[activeTool] || activeTool.toUpperCase() })}
               </div>
             )}
 
@@ -1172,7 +1174,7 @@ export default function MapsView() {
                 {Math.round(zoom * 100)}%
               </span>
               <button className="zoom-btn" onClick={() => setZoom(z => Math.max(0.3, z * 0.87))}>-</button>
-              <button className="zoom-btn font-oswald" style={{ fontSize: "10px", height: "auto", padding: "4px 2px" }} onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }}>↺ Reset</button>
+              <button className="zoom-btn font-oswald" style={{ fontSize: "10px", height: "auto", padding: "4px 2px" }} onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }}>{t("maps.zoom_reset")}</button>
             </div>
           </div>
 
@@ -1180,23 +1182,23 @@ export default function MapsView() {
           <div className="stratboard-panel">
             {/* Whiteboard Tools */}
             <div className="stratboard-panel-section">
-              <div className="stratboard-panel-title">HERRAMIENTAS</div>
+              <div className="stratboard-panel-title">{t("maps.tools_title")}</div>
               <div style={{ display: "flex", gap: "4px", marginBottom: "8px" }}>
-                <button className={`stratboard-tool-btn ${activeTool === "move" ? "active" : ""}`} onClick={() => setActiveTool("move")}>↖ MOVER</button>
-                <button className={`stratboard-tool-btn ${activeTool === "arrow" ? "active" : ""}`} onClick={() => setActiveTool("arrow")}>→ FLECHA</button>
-                <button className={`stratboard-tool-btn ${activeTool === "eraser" ? "active" : ""}`} onClick={() => setActiveTool("eraser")}>✕ BORRADOR</button>
+                <button className={`stratboard-tool-btn ${activeTool === "move" ? "active" : ""}`} onClick={() => setActiveTool("move")}>{t("maps.tool_move")}</button>
+                <button className={`stratboard-tool-btn ${activeTool === "arrow" ? "active" : ""}`} onClick={() => setActiveTool("arrow")}>{t("maps.tool_arrow")}</button>
+                <button className={`stratboard-tool-btn ${activeTool === "eraser" ? "active" : ""}`} onClick={() => setActiveTool("eraser")}>{t("maps.tool_eraser")}</button>
               </div>
               <div style={{ display: "flex", gap: "4px", marginBottom: "8px" }}>
-                <button className={`stratboard-tool-btn ${activeTool === "shape" ? "active" : ""}`} onClick={() => setActiveTool("shape")}>▢ FORMA</button>
-                <button className={`stratboard-tool-btn ${activeTool === "text" ? "active" : ""}`} onClick={() => setActiveTool("text")}>T TEXTO</button>
+                <button className={`stratboard-tool-btn ${activeTool === "shape" ? "active" : ""}`} onClick={() => setActiveTool("shape")}>{t("maps.tool_shape")}</button>
+                <button className={`stratboard-tool-btn ${activeTool === "text" ? "active" : ""}`} onClick={() => setActiveTool("text")}>{t("maps.tool_text")}</button>
               </div>
 
               {/* Sub-selector shape */}
               {activeTool === "shape" && (
                 <div style={{ display: "flex", gap: "4px", marginBottom: "8px" }}>
-                  <button className={`stratboard-tool-btn ${activeShapeType === "circle" ? "active" : ""}`} style={{ fontSize: "10px", padding: "4px" }} onClick={() => setActiveShapeType("circle")}>○ Círculo</button>
-                  <button className={`stratboard-tool-btn ${activeShapeType === "rect" ? "active" : ""}`} style={{ fontSize: "10px", padding: "4px" }} onClick={() => setActiveShapeType("rect")}>□ Rect</button>
-                  <button className={`stratboard-tool-btn ${activeShapeType === "line" ? "active" : ""}`} style={{ fontSize: "10px", padding: "4px" }} onClick={() => setActiveShapeType("line")}>/ Línea</button>
+                  <button className={`stratboard-tool-btn ${activeShapeType === "circle" ? "active" : ""}`} style={{ fontSize: "10px", padding: "4px" }} onClick={() => setActiveShapeType("circle")}>{t("maps.shape_circle")}</button>
+                  <button className={`stratboard-tool-btn ${activeShapeType === "rect" ? "active" : ""}`} style={{ fontSize: "10px", padding: "4px" }} onClick={() => setActiveShapeType("rect")}>{t("maps.shape_rect")}</button>
+                  <button className={`stratboard-tool-btn ${activeShapeType === "line" ? "active" : ""}`} style={{ fontSize: "10px", padding: "4px" }} onClick={() => setActiveShapeType("line")}>{t("maps.shape_line")}</button>
                 </div>
               )}
 
@@ -1215,38 +1217,44 @@ export default function MapsView() {
               {/* Undo/Redo */}
               <div style={{ display: "flex", gap: "6px" }}>
                 <button className="undo-redo-btn" onClick={handleUndo} disabled={histCount === 0}>
-                  ↩ ({histCount})
+                  {t("maps.undo", { count: histCount })}
                 </button>
                 <button className="undo-redo-btn" onClick={handleRedo} disabled={redoCount === 0}>
-                  ↪ ({redoCount})
+                  {t("maps.redo", { count: redoCount })}
                 </button>
               </div>
             </div>
 
             {/* Whiteboard Agents */}
             <div className="stratboard-panel-section" style={{ flex: "0 0 auto", display: "flex", flexDirection: "column" }}>
-              <div className="stratboard-panel-title">AGENTES</div>
+              <div className="stratboard-panel-title">{t("maps.agents_title")}</div>
 
               {/* Filtro de Roles */}
               <div style={{ display: "flex", gap: "3px", marginBottom: "8px", flexWrap: "wrap" }}>
-                {["TODOS", "DUELISTA", "CONTROLADOR", "INICIADOR", "CENTINELA"].map(role => (
+                {[
+                  { id: "TODOS", label: t("maps.filter_all_roles") },
+                  { id: "DUELISTA", label: t("maps.filter_duelist") },
+                  { id: "CONTROLADOR", label: t("maps.filter_controller") },
+                  { id: "INICIADOR", label: t("maps.filter_initiator") },
+                  { id: "CENTINELA", label: t("maps.filter_sentinel") }
+                ].map(role => (
                   <button
-                    key={role}
-                    className={`stratboard-tool-btn font-oswald ${agentRoleFilter === role ? "active" : ""}`}
+                    key={role.id}
+                    className={`stratboard-tool-btn font-oswald ${agentRoleFilter === role.id ? "active" : ""}`}
                     style={{
                       flex: "none",
                       padding: "3px 6px",
                       fontSize: "9px",
-                      background: agentRoleFilter === role ? "rgba(255, 70, 85, 0.15)" : "transparent",
-                      border: "1px solid " + (agentRoleFilter === role ? "var(--red)" : "var(--line)"),
+                      background: agentRoleFilter === role.id ? "rgba(255, 70, 85, 0.15)" : "transparent",
+                      border: "1px solid " + (agentRoleFilter === role.id ? "var(--red)" : "var(--line)"),
                       borderRadius: "3px",
-                      color: agentRoleFilter === role ? "var(--red)" : "var(--text-dim)",
+                      color: agentRoleFilter === role.id ? "var(--red)" : "var(--text-dim)",
                       cursor: "pointer",
                       letterSpacing: "0.5px"
                     }}
-                    onClick={() => setAgentRoleFilter(role)}
+                    onClick={() => setAgentRoleFilter(role.id)}
                   >
-                    {role === "CONTROLADOR" ? "CTRL" : role === "INICIADOR" ? "INIC" : role === "CENTINELA" ? "CENT" : role === "DUELISTA" ? "DUEL" : "TODOS"}
+                    {role.label}
                   </button>
                 ))}
               </div>
@@ -1312,11 +1320,9 @@ export default function MapsView() {
             {selectedAgentUuid === null && (
               <div className="stratboard-panel-section" style={{ flex: "1 1 auto", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", border: "1px dashed rgba(255,255,255,0.08)", borderRadius: "4px", padding: "16px", color: "var(--text-dim)", textAlign: "center" }}>
                 <div style={{ fontSize: "20px", marginBottom: "8px" }}>💡</div>
-                <div className="font-oswald" style={{ fontSize: "12px", color: "white", marginBottom: "6px", letterSpacing: "0.5px" }}>GUÍA DE PIZARRA TÁCTICA</div>
+                <div className="font-oswald" style={{ fontSize: "12px", color: "white", marginBottom: "6px", letterSpacing: "0.5px" }}>{t("maps.guide_title")}</div>
                 <p style={{ fontSize: "10px", margin: 0, lineHeight: "1.5", color: "var(--text-dim)", maxWidth: "220px" }}>
-                  • Selecciona herramientas arriba para dibujar líneas, formas o texto.<br />
-                  • Haz clic en un agente para ver sus habilidades.<br />
-                  • Arrastra agentes y habilidades al mapa para planificar jugadas.
+                  {t("maps.guide_text")}
                 </p>
               </div>
             )}
@@ -1325,7 +1331,7 @@ export default function MapsView() {
             {selectedAgentUuid !== null && selectedAgent && (
               <div className="stratboard-panel-section" style={{ flex: "1 1 auto", overflowY: "auto" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                  <div className="stratboard-panel-title" style={{ margin: 0 }}>HABILIDADES DE {selectedAgent.displayName.toUpperCase()}</div>
+                  <div className="stratboard-panel-title" style={{ margin: 0 }}>{t("maps.abilities_title", { agent: selectedAgent.displayName.toUpperCase() })}</div>
                   <button onClick={() => setSelectedAgentUuid(null)} style={{ background: "none", border: "none", color: "var(--text-dim)", cursor: "pointer", fontSize: "14px" }}>✕</button>
                 </div>
 
@@ -1389,7 +1395,7 @@ export default function MapsView() {
                   setDrawnTexts([]);
                 }}
               >
-                🗑 LIMPIAR TODO
+                {t("maps.clear_btn")}
               </button>
             </div>
           </div>
@@ -1459,7 +1465,7 @@ export default function MapsView() {
               }
               setContextMenu(null);
             }}>
-              ○ Sin equipo
+              ○ {t("maps.team_none")}
             </button>
             <div className="context-menu-divider" />
             <button className="context-menu-item" style={{ color: "var(--red)" }} onClick={() => {
@@ -1471,7 +1477,7 @@ export default function MapsView() {
               }
               setContextMenu(null);
             }}>
-              🗑 Eliminar
+              {t("maps.delete")}
             </button>
           </div>
         )}
@@ -1485,18 +1491,18 @@ export default function MapsView() {
       <div className="maps-header">
         <div className="maps-title-section">
           <Compass className="maps-title-icon" size={24} />
-          <h1 className="font-oswald">EXPLORACIÓN DE MAPAS</h1>
+          <h1 className="font-oswald">{t("maps.title")}</h1>
         </div>
         <div className="maps-filter-buttons">
-          <button className={`maps-filter-btn font-oswald ${filter === "rotation" ? "active" : ""}`} onClick={() => setFilter("rotation")}>POOL COMPETITIVO</button>
-          <button className={`maps-filter-btn font-oswald ${filter === "all" ? "active" : ""}`} onClick={() => setFilter("all")}>TODOS LOS MAPAS</button>
+          <button className={`maps-filter-btn font-oswald ${filter === "rotation" ? "active" : ""}`} onClick={() => setFilter("rotation")}>{t("maps.filter_rotation")}</button>
+          <button className={`maps-filter-btn font-oswald ${filter === "all" ? "active" : ""}`} onClick={() => setFilter("all")}>{t("maps.filter_all")}</button>
         </div>
       </div>
 
       {loading ? (
         <div className="maps-loading-state">
           <div className="loading-spinner"></div>
-          <span className="font-oswald text-dim">Cargando mapas desde Valorant-API...</span>
+          <span className="font-oswald text-dim">{t("maps.loading")}</span>
         </div>
       ) : (
         <div className="maps-grid">
@@ -1506,7 +1512,7 @@ export default function MapsView() {
                 <div className="map-card-overlay">
                   <div className="map-card-text">
                     <h2 className="map-name font-oswald">{map.displayName.toUpperCase()}</h2>
-                    <span className="map-coordinate font-oswald text-dim">{map.coordinates || "Coordenadas no disponibles"}</span>
+                    <span className="map-coordinate font-oswald text-dim">{map.coordinates || t("maps.coords_fallback")}</span>
                   </div>
                   {map.displayIcon && (
                     <div className="map-card-minimap-wrap">
@@ -1517,15 +1523,15 @@ export default function MapsView() {
               </div>
               <div className="map-card-footer">
                 <Info size={13} className="text-dim" />
-                <span className="text-dim font-oswald">UUID: {map.uuid.substring(0, 8).toUpperCase()}...</span>
+                <span className="text-dim font-oswald">{t("maps.uuid_label")} {map.uuid.substring(0, 8).toUpperCase()}...</span>
                 {ACTIVE_MAPS.includes(map.displayName.toLowerCase()) && (
-                  <span className="active-pool-badge font-oswald">COMPETITIVO ACTIVO</span>
+                  <span className="active-pool-badge font-oswald">{t("maps.active_badge")}</span>
                 )}
               </div>
             </div>
           ))}
           {filteredMaps.length === 0 && (
-            <div className="maps-empty-state text-dim font-oswald">No se encontraron mapas en esta sección.</div>
+            <div className="maps-empty-state text-dim font-oswald">{t("maps.empty")}</div>
           )}
         </div>
       )}

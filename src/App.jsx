@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import Header from "./components/Header";
 import PlayerProfileBar from "./components/PlayerProfileBar";
 import ActStatsBar from "./components/ActStatsBar";
@@ -134,7 +135,68 @@ async function savePlayerSnapshot(playerData) {
   }
 }
 
+async function detectAndAddPremierRoster(matches, account) {
+  if (!matches || matches.length === 0 || !account) return;
+
+  const premierMatch = matches.find(
+    (m) =>
+      m.metadata?.mode?.toLowerCase() === "premier" ||
+      m.metadata?.queue?.toLowerCase() === "premier"
+  );
+
+  if (!premierMatch) return;
+
+  const me = premierMatch.players?.all_players?.find((p) => p.puuid === account.puuid);
+  if (!me) return;
+
+  const teamColor = me.team?.toLowerCase();
+  if (teamColor !== "red" && teamColor !== "blue") return;
+
+  const matchTeam = premierMatch.teams?.[teamColor];
+  if (!matchTeam) return;
+
+  const rosterId = matchTeam.roster?.id || matchTeam.roster_id || matchTeam.id;
+  const rawTeamName = matchTeam.roster?.name || matchTeam.name || "Equipo Premier";
+  const teamName = `${rawTeamName} (Premier)`;
+
+  if (!rosterId) return;
+
+  try {
+    const savedRosters = JSON.parse(localStorage.getItem("valoquest_rosters") || "[]");
+    const exists = savedRosters.some(
+      (r) => r.id === rosterId || r.name?.toLowerCase() === teamName.toLowerCase()
+    );
+    if (exists) return;
+
+    const { data: apiJson } = await axios.get(`${API_BASE}/api/premier/id/${rosterId}`);
+    if (apiJson && apiJson.status === 200 && apiJson.data) {
+      const teamData = apiJson.data;
+      const teamMembers = teamData.members || [];
+
+      const rosterPlayers = teamMembers.map((member) => ({
+        puuid: member.puuid,
+        riotId: `${member.name}#${member.tag}`,
+        role: member.puuid === account.puuid ? "igl" : "duelist"
+      }));
+
+      const newRoster = {
+        id: rosterId,
+        name: teamName,
+        players: rosterPlayers,
+        createdAt: new Date().toISOString()
+      };
+
+      savedRosters.push(newRoster);
+      localStorage.setItem("valoquest_rosters", JSON.stringify(savedRosters));
+      console.log(`[Premier Roster Auto-Detected & Synced]: ${teamName}`);
+    }
+  } catch (err) {
+    console.warn("No se pudo autodetectar el equipo de Premier:", err.message);
+  }
+}
+
 export default function App() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -147,6 +209,12 @@ export default function App() {
   const [friendLoading, setFriendLoading] = useState(false);
   const [friendError, setFriendError] = useState("");
   const [activeTab, setActiveTab] = useState("tracker");
+
+  React.useEffect(() => {
+    if (playerData?.matches && playerData?.account) {
+      detectAndAddPremierRoster(playerData.matches, playerData.account);
+    }
+  }, [playerData]);
 
   const handleSearch = async (name, tag) => {
     setLoading(true);
@@ -270,7 +338,7 @@ export default function App() {
         throw apiErr;
       }
     } catch (err) {
-      setError(err.message || "Error al buscar el jugador. Verificá los datos e intentá de nuevo.");
+      setError(err.message || t("general.error_search"));
     } finally {
       setLoading(false);
     }
@@ -285,7 +353,7 @@ export default function App() {
       const result = await loadOrSyncPlayerProfile(name, tag);
       setPlayerData(result);
     } catch (err) {
-      setError(err.message || "Error al actualizar los datos.");
+      setError(err.message || t("general.error_update"));
     } finally {
       setRefreshing(false);
     }
@@ -299,7 +367,7 @@ export default function App() {
       setFriendData(result);
       setCompareMode(true);
     } catch (err) {
-      setFriendError(err.message || "No se pudo cargar el perfil del amigo.");
+      setFriendError(err.message || t("compare.err_friend_profile"));
     } finally {
       setFriendLoading(false);
     }
@@ -354,9 +422,9 @@ export default function App() {
               {loading && (
                 <div className="state-msg loading-msg">
                   <div className="loading-spinner"></div>
-                  Sincronizando expediente competitivo de combate...
+                  {t("general.sync_msg")}
                   <span style={{ fontSize: 13, color: "var(--text-dim)" }}>
-                    Esto puede tardar unos segundos — guardando partidas nuevas en la base de datos
+                    {t("general.sync_submsg")}
                   </span>
                 </div>
               )}
@@ -372,7 +440,7 @@ export default function App() {
               )}
 
               {!loading && !error && activeTab !== "compare" && !playerData && (
-                <div className="state-msg">Esperando un Riot ID para empezar a escanear...</div>
+                <div className="state-msg">{t("general.waiting_riot_id")}</div>
               )}
 
               {!loading && !error && activeTab !== "compare" && playerData && (
@@ -428,7 +496,7 @@ export default function App() {
             </main>
 
             <footer>
-              Proyecto independiente, no afiliado a Riot Games. Valorant es marca registrada de Riot Games, Inc.
+              {t("general.footer_text")}
             </footer>
           </>
         )}

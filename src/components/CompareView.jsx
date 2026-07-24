@@ -4,6 +4,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { RANK_ORDER } from "../services/achievementEvaluator";
+import { useTranslation } from "react-i18next";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
@@ -16,6 +17,7 @@ function RoleIcon({ role, className }) {
 }
 
 export default function CompareView({ playerData, onSearch, loadProfile }) {
+  const { t } = useTranslation();
   const [rivalTab, setRivalTab] = useState("friend"); // "friend" | "pro"
   const [rivalData, setRivalData] = useState(null);
   const [rivalLoading, setRivalLoading] = useState(false);
@@ -54,12 +56,12 @@ export default function CompareView({ playerData, onSearch, loadProfile }) {
     e.preventDefault();
     const raw = friendInput.trim();
     if (!raw.includes("#")) {
-      setRivalError("Formato inválido. Usá Nombre#TAG");
+      setRivalError(t("header.error_format"));
       return;
     }
     const [name, tag] = raw.split("#");
     if (!name || !tag) {
-      setRivalError("Ambos nombre y tag son obligatorios.");
+      setRivalError(t("header.error_format"));
       return;
     }
     setRivalError("");
@@ -69,10 +71,10 @@ export default function CompareView({ playerData, onSearch, loadProfile }) {
       if (data) {
         setRivalData(data);
       } else {
-        setRivalError("No se encontraron datos para este jugador.");
+        setRivalError(t("compare.no_player_found"));
       }
     } catch (err) {
-      setRivalError(err.message || "Error al buscar el perfil del amigo.");
+      setRivalError(err.message || t("compare.err_friend_profile"));
     } finally {
       setRivalLoading(false);
     }
@@ -87,10 +89,10 @@ export default function CompareView({ playerData, onSearch, loadProfile }) {
       if (data) {
         setRivalData(data);
       } else {
-        setRivalError(`No se encontró la cuenta de ${pro.display_name}. Puede que el Riot ID haya cambiado.`);
+        setRivalError(t("compare.err_pro_not_found", { name: pro.display_name }));
       }
     } catch (err) {
-      setRivalError(`No se encontró la cuenta de ${pro.display_name}. Puede que el Riot ID haya cambiado.`);
+      setRivalError(t("compare.err_pro_not_found", { name: pro.display_name }));
     } finally {
       setRivalLoading(false);
     }
@@ -120,7 +122,7 @@ export default function CompareView({ playerData, onSearch, loadProfile }) {
     return [
       {
         id: "kd",
-        label: "K/D Ratio",
+        label: t("compare.metric_kd"),
         meVal: playerData.stats.kdRatio || 0,
         rivalVal: rivalData.stats.kdRatio || 0,
         higherIsBetter: true,
@@ -129,7 +131,7 @@ export default function CompareView({ playerData, onSearch, loadProfile }) {
       },
       {
         id: "winrate",
-        label: "Winrate",
+        label: t("compare.metric_winrate"),
         meVal: playerData.stats.winrate || 0,
         rivalVal: rivalData.stats.winrate || 0,
         higherIsBetter: true,
@@ -138,7 +140,7 @@ export default function CompareView({ playerData, onSearch, loadProfile }) {
       },
       {
         id: "hs",
-        label: "Headshot %",
+        label: t("compare.metric_hs"),
         meVal: playerData.stats.headshotPct || 0,
         rivalVal: rivalData.stats.headshotPct || 0,
         higherIsBetter: true,
@@ -147,17 +149,17 @@ export default function CompareView({ playerData, onSearch, loadProfile }) {
       },
       {
         id: "adr",
-        label: "ADR*",
+        label: t("compare.metric_adr") + "*",
         meVal: playerData.stats.matchesPlayed > 0 ? Math.round(playerData.stats.totalDamage / playerData.stats.matchesPlayed) : 0,
         rivalVal: rivalData.stats.matchesPlayed > 0 ? Math.round(rivalData.stats.totalDamage / rivalData.stats.matchesPlayed) : 0,
         higherIsBetter: true,
         useBar: true,
         format: (v) => v.toString(),
-        tooltip: "* Calculado como daño total / partidas jugadas"
+        tooltip: t("compare.adr_tooltip", { defaultValue: "* Calculated as total damage / matches played" })
       },
       {
         id: "played",
-        label: "Partidas jugadas",
+        label: t("compare.metric_matches"),
         meVal: playerData.stats.matchesPlayed || 0,
         rivalVal: rivalData.stats.matchesPlayed || 0,
         higherIsBetter: true,
@@ -167,7 +169,7 @@ export default function CompareView({ playerData, onSearch, loadProfile }) {
       },
       {
         id: "kills",
-        label: "Kills totales",
+        label: t("compare.metric_kills"),
         meVal: playerData.stats.totalKills || 0,
         rivalVal: rivalData.stats.totalKills || 0,
         higherIsBetter: true,
@@ -176,7 +178,7 @@ export default function CompareView({ playerData, onSearch, loadProfile }) {
       },
       {
         id: "deaths",
-        label: "Muertes totales",
+        label: t("compare.metric_deaths"),
         meVal: playerData.stats.totalDeaths || 0,
         rivalVal: rivalData.stats.totalDeaths || 0,
         higherIsBetter: false,
@@ -185,7 +187,7 @@ export default function CompareView({ playerData, onSearch, loadProfile }) {
       },
       {
         id: "assists",
-        label: "Asistencias totales",
+        label: t("compare.metric_assists"),
         meVal: playerData.stats.totalAssists || 0,
         rivalVal: rivalData.stats.totalAssists || 0,
         higherIsBetter: true,
@@ -194,16 +196,16 @@ export default function CompareView({ playerData, onSearch, loadProfile }) {
       },
       {
         id: "rank",
-        label: "Rango actual",
-        meVal: playerData.stats.rankTier || "Unranked",
-        rivalVal: rivalData.stats.rankTier || "Unranked",
+        label: t("compare.metric_rank"),
+        meVal: playerData.stats.rankTier || t("profile.unranked"),
+        rivalVal: rivalData.stats.rankTier || t("profile.unranked"),
         useBar: false,
         compareRank: true,
         format: (v) => v
       },
       {
         id: "agent",
-        label: "Agente favorito",
+        label: t("compare.metric_agent"),
         meVal: playerData.stats.mostPlayedAgent || "—",
         rivalVal: rivalData.stats.mostPlayedAgent || "—",
         useBar: false,
@@ -212,7 +214,7 @@ export default function CompareView({ playerData, onSearch, loadProfile }) {
       },
       {
         id: "bestmap",
-        label: "Mapa más fuerte",
+        label: t("compare.metric_best_map"),
         meVal: meBestMap,
         rivalVal: rivalBestMap,
         useBar: false,
@@ -242,10 +244,10 @@ export default function CompareView({ playerData, onSearch, loadProfile }) {
 
     const axes = [
       { name: "K/D", me: playerData.stats.kdRatio || 0, rival: rivalData.stats.kdRatio || 0 },
-      { name: "Winrate", me: playerData.stats.winrate || 0, rival: rivalData.stats.winrate || 0 },
-      { name: "HS %", me: playerData.stats.headshotPct || 0, rival: rivalData.stats.headshotPct || 0 },
+      { name: t("compare.metric_winrate"), me: playerData.stats.winrate || 0, rival: rivalData.stats.winrate || 0 },
+      { name: t("compare.metric_hs"), me: playerData.stats.headshotPct || 0, rival: rivalData.stats.headshotPct || 0 },
       { name: "ADR", me: meADR, rival: rivalADR },
-      { name: "Kills/Partida", me: meKPG, rival: rivalKPG }
+      { name: t("compare.kills_per_match"), me: meKPG, rival: rivalKPG }
     ];
 
     const radarData = axes.map((axis) => {
@@ -381,10 +383,10 @@ export default function CompareView({ playerData, onSearch, loadProfile }) {
       {/* SECCIÓN A: Encabezado */}
       <div style={{ marginBottom: "24px" }}>
         <h2 className="font-oswald" style={{ fontSize: "28px", letterSpacing: "1px", margin: 0 }}>
-          COMPARAR ESTADÍSTICAS
+          {t("compare.title").toUpperCase()}
         </h2>
         <p style={{ color: "var(--text-dim)", fontSize: "14px", margin: "4px 0 0 0" }}>
-          Mide tu rendimiento competitivo ranked contra tus amigos o leyendas del competitivo profesional.
+          {t("compare.subtitle")}
         </p>
       </div>
 
@@ -395,13 +397,13 @@ export default function CompareView({ playerData, onSearch, loadProfile }) {
             className={`compare-rival-tab ${rivalTab === "friend" ? "active" : ""}`}
             onClick={() => setRivalTab("friend")}
           >
-            Comparar Amigo
+            {t("compare.tab_friend")}
           </button>
           <button
             className={`compare-rival-tab ${rivalTab === "pro" ? "active" : ""}`}
             onClick={() => setRivalTab("pro")}
           >
-            Jugadores Profesionales
+            {t("compare.tab_pro")}
           </button>
         </div>
 
@@ -410,7 +412,7 @@ export default function CompareView({ playerData, onSearch, loadProfile }) {
             <form onSubmit={handleFriendSearchSubmit} style={{ display: "flex", gap: "10px" }}>
               <input
                 type="text"
-                placeholder="Nombre#TAG de tu amigo"
+                placeholder={t("compare.search_placeholder")}
                 value={friendInput}
                 onChange={(e) => setFriendInput(e.target.value)}
                 style={{
@@ -442,7 +444,7 @@ export default function CompareView({ playerData, onSearch, loadProfile }) {
                 }}
               >
                 <Search size={16} />
-                BUSCAR
+                {t("compare.search_btn").toUpperCase()}
               </button>
             </form>
           </div>
@@ -485,7 +487,7 @@ export default function CompareView({ playerData, onSearch, loadProfile }) {
         {rivalLoading && (
           <div style={{ marginTop: "16px", display: "flex", alignItems: "center", gap: "10px", color: "var(--text-dim)", fontSize: "14px" }}>
             <div className="loading-spinner" style={{ width: "20px", height: "20px", borderWidth: "2px" }} />
-            Sincronizando perfil del rival...
+            {t("compare.syncing_rival")}
           </div>
         )}
 
@@ -501,20 +503,20 @@ export default function CompareView({ playerData, onSearch, loadProfile }) {
         <div className="mdo-perf-panel-card compare-empty-state">
           <Search size={48} className="empty-icon" />
           <p className="font-oswald" style={{ fontSize: "18px", color: "var(--text)", margin: "0 0 8px 0" }}>
-            FALTA TU PERFIL PRINCIPAL
+            {t("compare.no_profile_title")}
           </p>
           <p style={{ margin: 0 }}>
-            Primero buscá tu Riot ID usando la barra de búsqueda arriba en el sidebar.
+            {t("compare.no_profile")}
           </p>
         </div>
       ) : !rivalData ? (
         <div className="mdo-perf-panel-card compare-empty-state">
           <Swords size={48} className="empty-icon" />
           <p className="font-oswald" style={{ fontSize: "18px", color: "var(--text)", margin: "0 0 8px 0" }}>
-            FALTA RIVAL
+            {t("compare.no_rival_title")}
           </p>
           <p style={{ margin: 0 }}>
-            Elegí un amigo o un jugador profesional en la sección de arriba para comparar.
+            {t("compare.select_rival")}
           </p>
         </div>
       ) : (
@@ -522,7 +524,7 @@ export default function CompareView({ playerData, onSearch, loadProfile }) {
           {/* Advertencia de 0 partidas */}
           {rivalData.stats.matchesPlayed === 0 && (
             <div style={{ padding: "10px 14px", background: "rgba(240, 195, 67, 0.1)", border: "1px solid var(--gold)", borderRadius: "4px", color: "var(--gold)", fontSize: "13px", marginBottom: "16px" }}>
-              ⚠️ Este jugador no tiene partidas competitivas registradas. Las stats pueden estar incompletas.
+              {t("compare.no_competitive_warning")}
             </div>
           )}
 
@@ -533,19 +535,19 @@ export default function CompareView({ playerData, onSearch, loadProfile }) {
                 {playerData.account.name.toUpperCase()}
                 <span className="cvp-tag">#{playerData.account.tag}</span>
               </div>
-              <div className="cvp-rank">{playerData.stats.rankTier || "Unranked"}</div>
-              <span className="cvp-badge me">TÚ</span>
+              <div className="cvp-rank">{playerData.stats.rankTier || t("profile.unranked")}</div>
+              <span className="cvp-badge me">{t("compare.you_badge")}</span>
             </div>
 
-            <div className="compare-vs-divider">VS</div>
+            <div className="compare-vs-divider">{t("compare.vs_divider")}</div>
 
             <div className="compare-vs-player">
               <div className="cvp-name">
                 {rivalData.account.name.toUpperCase()}
                 <span className="cvp-tag">#{rivalData.account.tag}</span>
               </div>
-              <div className="cvp-rank">{rivalData.stats.rankTier || "Unranked"}</div>
-              <span className="cvp-badge rival">RIVAL</span>
+              <div className="cvp-rank">{rivalData.stats.rankTier || t("profile.unranked")}</div>
+              <span className="cvp-badge rival">{t("compare.rival_badge")}</span>
             </div>
           </div>
 
@@ -555,13 +557,13 @@ export default function CompareView({ playerData, onSearch, loadProfile }) {
               className={`compare-subtab ${compareTab === "stats" ? "active" : ""}`}
               onClick={() => setCompareTab("stats")}
             >
-              Estadísticas
+              {t("compare.tab_stats")}
             </button>
             <button
               className={`compare-subtab ${compareTab === "radar" ? "active" : ""}`}
               onClick={() => setCompareTab("radar")}
             >
-              Radar
+              {t("compare.tab_radar")}
             </button>
           </div>
 

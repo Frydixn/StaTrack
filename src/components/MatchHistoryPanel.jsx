@@ -4,8 +4,10 @@ import {
   TrendingUp, Percent, Sparkles, AlertCircle 
 } from "lucide-react";
 import MatchDetailOverlay from "./MatchDetailOverlay";
+import { useTranslation } from "react-i18next";
 
 export default function MatchHistoryPanel({ matches, puuid }) {
+  const { t, i18n } = useTranslation();
   const [agentIcons, setAgentIcons] = useState({});
   const [expandedDays, setExpandedDays] = useState({});
   const [visibleDaysCount, setVisibleDaysCount] = useState(3);
@@ -31,7 +33,7 @@ export default function MatchHistoryPanel({ matches, puuid }) {
     return (
       <div className="match-history-empty">
         <AlertCircle size={24} className="empty-icon" />
-        <p>No se encontraron partidas competitivas registradas para este agente.</p>
+        <p>{t("match_history.empty_agent")}</p>
       </div>
     );
   }
@@ -77,7 +79,7 @@ export default function MatchHistoryPanel({ matches, puuid }) {
       date.getMonth() === today.getMonth() &&
       date.getFullYear() === today.getFullYear()
     ) {
-      return "HOY";
+      return t("match_history.today");
     }
     
     if (
@@ -85,11 +87,11 @@ export default function MatchHistoryPanel({ matches, puuid }) {
       date.getMonth() === yesterday.getMonth() &&
       date.getFullYear() === yesterday.getFullYear()
     ) {
-      return "AYER";
+      return t("match_history.yesterday");
     }
     
-    const months = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
-    return `${day} ${months[date.getMonth()]}`;
+    const monthName = date.toLocaleDateString(i18n.language, { month: 'short' }).toUpperCase();
+    return `${day} ${monthName}`;
   };
 
   // Helper for relative game timestamp
@@ -100,9 +102,9 @@ export default function MatchHistoryPanel({ matches, puuid }) {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    return `${diffDays}d ago`;
+    if (diffMins < 60) return t("general.time_m_ago", { count: diffMins });
+    if (diffHours < 24) return t("general.time_h_ago", { count: diffHours });
+    return t("general.time_d_ago", { count: diffDays });
   };
 
   const toggleDayCollapse = (dayKey) => {
@@ -119,7 +121,7 @@ export default function MatchHistoryPanel({ matches, puuid }) {
     <div className="match-history-container">
       <div className="section-header-title">
         <Sparkles size={18} className="section-icon" />
-        <span>Historial de Partidas Recientes</span>
+        <span>{t("match_history.recent_matches")}</span>
       </div>
 
       <div className="match-history-days-list">
@@ -190,7 +192,7 @@ export default function MatchHistoryPanel({ matches, puuid }) {
                 <div className="day-header-left">
                   {isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
                   <span className="day-date">{getHeaderDateString(dayKey)}</span>
-                  <span className="day-count">{dayMatches.length} {dayMatches.length === 1 ? "Partida" : "Partidas"}</span>
+                  <span className="day-count">{dayMatches.length} {dayMatches.length === 1 ? t("roster.games_one").toUpperCase() : t("roster.games_multiple").toUpperCase()}</span>
                   <span className="day-record">
                     <span className="text-win">{wins} W</span> // <span className="text-loss">{losses} L</span>
                   </span>
@@ -238,13 +240,13 @@ export default function MatchHistoryPanel({ matches, puuid }) {
                     const isDraw = scoreWon === scoreLost;
 
                     let outcomeClass = "match-draw";
-                    let outcomeText = "DRAW";
+                    let outcomeText = t("match_history.draw");
                     if (isWin) {
                       outcomeClass = "match-win";
-                      outcomeText = "VICTORY";
+                      outcomeText = t("match_history.victory");
                     } else if (isLoss) {
                       outcomeClass = "match-loss";
-                      outcomeText = "DEFEAT";
+                      outcomeText = t("match_history.defeat");
                     }
 
                     // Stats per match
@@ -322,7 +324,7 @@ export default function MatchHistoryPanel({ matches, puuid }) {
 
                           <div className="match-info-details">
                             <div className="match-mode-time">
-                              <span className="mode">Competitive</span>
+                              <span className="mode">{t("match_history.competitive")}</span>
                               <span className="bullet">•</span>
                               <Clock size={11} className="time-icon" />
                               <span className="time">{getRelativeTime(match.metadata?.game_start)}</span>
@@ -352,8 +354,8 @@ export default function MatchHistoryPanel({ matches, puuid }) {
                         {/* Stats Summary Column */}
                         <div className="card-stats-section">
                           <div className="stat-col rank-info">
-                            <span className="val">{me.currenttier_patched || "Unranked"}</span>
-                            <span className="lbl">Competitive Rank</span>
+                            <span className="val">{me.currenttier_patched || t("profile.unranked")}</span>
+                            <span className="lbl">{t("match_history.comp_rank")}</span>
                           </div>
 
                           <div className="stat-col">
@@ -399,7 +401,7 @@ export default function MatchHistoryPanel({ matches, puuid }) {
             className="btn btn-secondary load-more-btn"
             onClick={() => setVisibleDaysCount((prev) => prev + 3)}
           >
-            Ver Historial Completo
+            {t("match_history.full_history")}
           </button>
         </div>
       )}

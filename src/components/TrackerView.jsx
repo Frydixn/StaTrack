@@ -7,8 +7,10 @@ import MatchHistoryPanel from "./MatchHistoryPanel";
 import { generateTrackerData } from "../services/trackerEngine";
 import { aggregateStats } from "../services/statsEngine";
 import { BarChart3, AlertCircle, Calendar, Filter, X, Award } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function TrackerView({ playerData }) {
+  const { t } = useTranslation();
   const [dateRange, setDateRange] = useState("all");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
@@ -27,7 +29,7 @@ export default function TrackerView({ playerData }) {
     if (start) {
       const startMs = new Date(start).getTime();
       if (startMs < minDateLimit) {
-        setDateError("La fecha no puede ser anterior al lanzamiento (2 de junio de 2020).");
+        setDateError(t("tracker.date_error_launch"));
         return;
       }
     }
@@ -35,7 +37,7 @@ export default function TrackerView({ playerData }) {
     if (end) {
       const endMs = new Date(end).getTime();
       if (endMs > todayLimit) {
-        setDateError("La fecha final no puede ser en el futuro.");
+        setDateError(t("tracker.date_error_future"));
         return;
       }
     }
@@ -47,9 +49,9 @@ export default function TrackerView({ playerData }) {
       const diffDays = diffTime / (1000 * 60 * 60 * 24);
 
       if (diffDays < 0) {
-        setDateError("La fecha de inicio no puede ser posterior a la de fin.");
+        setDateError(t("tracker.date_error_order"));
       } else if (diffDays > 7) {
-        setDateError("El período no puede exceder un máximo de 7 días.");
+        setDateError(t("tracker.date_error_limit"));
       }
     }
   };
@@ -62,7 +64,7 @@ export default function TrackerView({ playerData }) {
     if (startVal) {
       const startDateObj = new Date(startVal);
       if (startDateObj.getTime() < minDateLimit) {
-        setDateError("La fecha no puede ser anterior al lanzamiento (2 de junio de 2020).");
+        setDateError(t("tracker.date_error_launch"));
         return;
       }
 
@@ -170,18 +172,17 @@ export default function TrackerView({ playerData }) {
       .slice(0, 3);
   })();
 
-  // Format label for display
   const getRangeLabel = () => {
-    if (dateRange === "all") return "TODOS LOS PARTIDOS";
-    if (dateRange === "month") return "ÚLTIMO MES";
-    if (dateRange === "act") return "ÚLTIMO ACTO";
+    if (dateRange === "all") return t("tracker.opt_all");
+    if (dateRange === "month") return t("tracker.opt_month");
+    if (dateRange === "act") return t("tracker.opt_act");
     if (dateRange === "custom") {
       if (customStart && customEnd) {
-        return `${customStart} A ${customEnd}`;
+        return `${customStart} - ${customEnd}`;
       }
-      return "RANGO PERSONALIZADO";
+      return t("tracker.opt_custom");
     }
-    return "TODOS LOS PARTIDOS";
+    return t("tracker.opt_all");
   };
 
   const winsCount = filteredMatches.filter((m) => {
@@ -315,9 +316,9 @@ export default function TrackerView({ playerData }) {
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <BarChart3 size={18} className="tracker-header-icon" />
           <div>
-            <h2>Informe Táctico de Rendimiento</h2>
+            <h2>{t("tracker.tactical_report")}</h2>
             <p style={{ margin: 0 }}>
-              Análisis algorítmico de tus estadísticas competitivas acumuladas en base de datos comparado con promedios oficiales de tu rango.
+              {t("tracker.tactical_desc")}
             </p>
           </div>
         </div>
@@ -341,7 +342,7 @@ export default function TrackerView({ playerData }) {
             }}
           >
             <Calendar size={14} style={{ color: "var(--red)" }} />
-            ANÁLISIS: {getRangeLabel()}
+            {t("tracker.analysis_prefix")} {getRangeLabel()}
           </button>
 
           {isFilterOpen && (
@@ -381,7 +382,7 @@ export default function TrackerView({ playerData }) {
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <BarChart3 size={18} style={{ color: "var(--red)" }} />
                     <span className="font-oswald" style={{ fontSize: "16px", letterSpacing: "1px", color: "white" }}>
-                      PANEL DE ANÁLISIS ({getRangeLabel()})
+                      {t("tracker.analysis_panel")} ({getRangeLabel()})
                     </span>
                   </div>
                   <X
@@ -397,13 +398,13 @@ export default function TrackerView({ playerData }) {
                   <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                     {/* Time Selector */}
                     <div style={{ background: "var(--bg-card)", padding: "14px", borderRadius: "4px", border: "1px solid var(--line)" }}>
-                      <div className="font-oswald" style={{ fontSize: "11px", color: "var(--text-dim)", marginBottom: "8px", letterSpacing: "0.5px" }}>PERÍODO A ANALIZAR</div>
+                      <div className="font-oswald" style={{ fontSize: "11px", color: "var(--text-dim)", marginBottom: "8px", letterSpacing: "0.5px" }}>{t("tracker.period_label")}</div>
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
                         {[
-                          { id: "all", label: "HISTORIAL ENTERO" },
-                          { id: "custom", label: "RANGO FECHAS (MAX 7D)" },
-                          { id: "month", label: "ÚLTIMO MES" },
-                          { id: "act", label: "ÚLTIMO ACTO" }
+                          { id: "all", label: t("tracker.opt_all") },
+                          { id: "custom", label: t("tracker.opt_custom") },
+                          { id: "month", label: t("tracker.opt_month") },
+                          { id: "act", label: t("tracker.opt_act") }
                         ].map((opt) => (
                           <button
                             key={opt.id}
@@ -429,7 +430,7 @@ export default function TrackerView({ playerData }) {
                         <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
                           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                             <div style={{ flex: 1 }}>
-                              <label className="font-oswald" style={{ fontSize: "9px", color: "var(--text-dim)", display: "block", marginBottom: "4px", letterSpacing: "0.5px" }}>DÍA INICIO</label>
+                              <label className="font-oswald" style={{ fontSize: "9px", color: "var(--text-dim)", display: "block", marginBottom: "4px", letterSpacing: "0.5px" }}>{t("tracker.start_day")}</label>
                               <input
                                 type="date"
                                 min="2020-06-02"
@@ -451,7 +452,7 @@ export default function TrackerView({ playerData }) {
                               />
                             </div>
                             <div style={{ flex: 1 }}>
-                              <label className="font-oswald" style={{ fontSize: "9px", color: "var(--text-dim)", display: "block", marginBottom: "4px", letterSpacing: "0.5px" }}>DÍA FINAL</label>
+                              <label className="font-oswald" style={{ fontSize: "9px", color: "var(--text-dim)", display: "block", marginBottom: "4px", letterSpacing: "0.5px" }}>{t("tracker.end_day")}</label>
                               <input
                                 type="date"
                                 min="2020-06-02"
@@ -486,8 +487,8 @@ export default function TrackerView({ playerData }) {
                     {/* Winrate Record */}
                     <div style={{ background: "var(--bg-card)", padding: "14px", borderRadius: "4px", border: "1px solid var(--line)" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                        <div className="font-oswald" style={{ fontSize: "11px", color: "var(--text-dim)", letterSpacing: "0.5px" }}>HISTORIAL DE PARTIDAS</div>
-                        <div className="font-oswald" style={{ fontSize: "11px", color: "var(--text-dim)", letterSpacing: "0.5px" }}>{computedStats.matchesPlayed} PARTIDAS</div>
+                        <div className="font-oswald" style={{ fontSize: "11px", color: "var(--text-dim)", letterSpacing: "0.5px" }}>{t("match_history.title")}</div>
+                        <div className="font-oswald" style={{ fontSize: "11px", color: "var(--text-dim)", letterSpacing: "0.5px" }}>{t("general.matches", { count: computedStats.matchesPlayed }).toUpperCase()}</div>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                         <span className="font-oswald" style={{ fontSize: "20px", color: computedStats.winrate >= 50 ? "var(--cyan)" : "white" }}>
@@ -500,9 +501,9 @@ export default function TrackerView({ playerData }) {
                     </div>
                     {/* Roles Statistics */}
                     <div style={{ background: "var(--bg-card)", padding: "14px", borderRadius: "4px", border: "1px solid var(--line)" }}>
-                      <div className="font-oswald" style={{ fontSize: "11px", color: "var(--text-dim)", marginBottom: "8px", letterSpacing: "0.5px" }}>ESTADÍSTICAS POR ROL</div>
+                      <div className="font-oswald" style={{ fontSize: "11px", color: "var(--text-dim)", marginBottom: "8px", letterSpacing: "0.5px" }}>{t("tracker.role_stats")}</div>
                       {periodRoles.length === 0 ? (
-                        <div style={{ fontSize: "11px", color: "var(--text-dim)", textAlign: "center", padding: "6px 0" }}>Sin datos de roles.</div>
+                        <div style={{ fontSize: "11px", color: "var(--text-dim)", textAlign: "center", padding: "6px 0" }}>{t("tracker.no_roles_data")}</div>
                       ) : (
                         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                           {periodRoles.map((role) => (
@@ -522,7 +523,7 @@ export default function TrackerView({ playerData }) {
                   <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                     {/* Performance Overview */}
                     <div style={{ background: "var(--bg-card)", padding: "14px", borderRadius: "4px", border: "1px solid var(--line)" }}>
-                      <div className="font-oswald" style={{ fontSize: "11px", color: "var(--text-dim)", marginBottom: "10px", letterSpacing: "0.5px" }}>RENDIMIENTO DE COMBATE</div>
+                      <div className="font-oswald" style={{ fontSize: "11px", color: "var(--text-dim)", marginBottom: "10px", letterSpacing: "0.5px" }}>{t("general.combat_performance")}</div>
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
                         <div>
                           <span style={{ fontSize: "9px", color: "var(--text-dim)", display: "block" }}>K/D RATIO</span>
@@ -539,15 +540,15 @@ export default function TrackerView({ playerData }) {
                           <span className="font-oswald" style={{ fontSize: "16px" }}>{kadRatio}</span>
                         </div>
                         <div>
-                          <span style={{ fontSize: "9px", color: "var(--text-dim)", display: "block" }}>DAMAGE/ROUND</span>
+                          <span style={{ fontSize: "9px", color: "var(--text-dim)", display: "block" }}>{t("general.adr")}</span>
                           <span className="font-oswald" style={{ fontSize: "16px" }}>{adr}</span>
                         </div>
                         <div>
-                          <span style={{ fontSize: "9px", color: "var(--text-dim)", display: "block" }}>ACES</span>
+                          <span style={{ fontSize: "9px", color: "var(--text-dim)", display: "block" }}>{t("general.aces")}</span>
                           <span className="font-oswald" style={{ fontSize: "16px" }}>{computedStats.aces}</span>
                         </div>
                         <div>
-                          <span style={{ fontSize: "9px", color: "var(--text-dim)", display: "block" }}>FIRST BLOODS</span>
+                          <span style={{ fontSize: "9px", color: "var(--text-dim)", display: "block" }}>{t("general.first_bloods")}</span>
                           <span className="font-oswald" style={{ fontSize: "16px" }}>{firstBloods}</span>
                         </div>
                       </div>
@@ -555,9 +556,9 @@ export default function TrackerView({ playerData }) {
 
                     {/* Top Agents */}
                     <div style={{ background: "var(--bg-card)", padding: "14px", borderRadius: "4px", border: "1px solid var(--line)" }}>
-                      <div className="font-oswald" style={{ fontSize: "11px", color: "var(--text-dim)", marginBottom: "8px", letterSpacing: "0.5px" }}>TOP 3 AGENTES</div>
+                      <div className="font-oswald" style={{ fontSize: "11px", color: "var(--text-dim)", marginBottom: "8px", letterSpacing: "0.5px" }}>{t("tracker.top_agents")}</div>
                       {topAgents.length === 0 ? (
-                        <div style={{ fontSize: "11px", color: "var(--text-dim)", textAlign: "center", padding: "6px 0" }}>Sin datos de agentes.</div>
+                        <div style={{ fontSize: "11px", color: "var(--text-dim)", textAlign: "center", padding: "6px 0" }}>{t("tracker.no_agents_data")}</div>
                       ) : (
                         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                           {topAgents.map((agent) => {
@@ -582,9 +583,9 @@ export default function TrackerView({ playerData }) {
 
                     {/* Top Maps */}
                     <div style={{ background: "var(--bg-card)", padding: "14px", borderRadius: "4px", border: "1px solid var(--line)" }}>
-                      <div className="font-oswald" style={{ fontSize: "11px", color: "var(--text-dim)", marginBottom: "8px", letterSpacing: "0.5px" }}>TOP 3 MAPAS (MEJOR WINRATE)</div>
+                      <div className="font-oswald" style={{ fontSize: "11px", color: "var(--text-dim)", marginBottom: "8px", letterSpacing: "0.5px" }}>{t("tracker.top_maps")}</div>
                       {topPeriodMaps.length === 0 ? (
-                        <div style={{ fontSize: "11px", color: "var(--text-dim)", textAlign: "center", padding: "6px 0" }}>Sin datos de mapas.</div>
+                        <div style={{ fontSize: "11px", color: "var(--text-dim)", textAlign: "center", padding: "6px 0" }}>{t("tracker.no_maps_data")}</div>
                       ) : (
                         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                           {topPeriodMaps.map((m) => (
@@ -617,7 +618,7 @@ export default function TrackerView({ playerData }) {
                       fontSize: "12px"
                     }}
                   >
-                    ENTENDIDO
+                    {t("general.understood").toUpperCase()}
                   </button>
                 </div>
               </div>
@@ -629,17 +630,17 @@ export default function TrackerView({ playerData }) {
       {!hasMatches ? (
         <div className="match-history-empty" style={{ margin: "40px 0", padding: "40px", textAlign: "center" }}>
           <AlertCircle size={32} className="empty-icon" style={{ marginBottom: "12px", color: "var(--red)" }} />
-          <p className="font-oswald" style={{ fontSize: "18px", margin: "0 0 6px 0" }}>SIN PARTIDAS REGISTRADAS</p>
-          <p style={{ color: "var(--text-dim)", margin: 0 }}>No hay partidos competitivos que coincidan con el rango de tiempo seleccionado.</p>
+          <p className="font-oswald" style={{ fontSize: "18px", margin: "0 0 6px 0" }}>{t("match_history.empty").toUpperCase()}</p>
+          <p style={{ color: "var(--text-dim)", margin: 0 }}>{t("tracker.no_matches_range")}</p>
         </div>
       ) : (
         <>
           <div className="tracker-grid">
             <div className="tracker-column">
-              <div className="column-title">FORTALEZAS</div>
+              <div className="column-title">{t("tracker.strengths").toUpperCase()}</div>
               <div className="insights-list">
                 {strengths.length === 0 ? (
-                  <div className="state-msg-small">No se detectaron fortalezas sobresalientes en este rango. ¡Sigue mejorando!</div>
+                  <div className="state-msg-small">{t("tracker.no_strengths")}</div>
                 ) : (
                   strengths.map((ins, i) => <InsightCard key={i} insight={ins} />)
                 )}
@@ -647,10 +648,10 @@ export default function TrackerView({ playerData }) {
             </div>
 
             <div className="tracker-column">
-              <div className="column-title">PUNTOS DE MEJORA</div>
+              <div className="column-title">{t("tracker.focus_areas").toUpperCase()}</div>
               <div className="insights-list">
                 {weaknesses.length === 0 ? (
-                  <div className="state-msg-small">¡Espectacular! No tienes debilidades críticas en comparación con tu rango actual.</div>
+                  <div className="state-msg-small">{t("tracker.no_weaknesses")}</div>
                 ) : (
                   weaknesses.map((ins, i) => <InsightCard key={i} insight={ins} />)
                 )}

@@ -1,6 +1,8 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 export default function RankComparisonChart({ benchmarks, rankGroup }) {
+  const { t } = useTranslation();
   if (!benchmarks) return null;
 
   const { player, average } = benchmarks;
@@ -10,7 +12,7 @@ export default function RankComparisonChart({ benchmarks, rankGroup }) {
   const R = 90;
   const angles = [-Math.PI / 2, -Math.PI / 2 + 1.2566, -Math.PI / 2 + 2.5132, -Math.PI / 2 + 3.7699, -Math.PI / 2 + 5.0265];
   
-  const labelNames = ["K/D", "HS%", "Winrate", "Daño/P", "Asist/P"];
+  const labelNames = ["K/D", "HS%", "Winrate", t("general.dpg_short"), t("general.apg_short")];
 
   const ranges = [
     { min: 0.5, max: 1.5 },   // K/D
@@ -47,7 +49,7 @@ export default function RankComparisonChart({ benchmarks, rankGroup }) {
   return (
     <div className="radar-chart-card">
       <div className="chart-header">
-        <span className="chart-title">COMPARATIVA vs PROMEDIO ({rankGroup.toUpperCase()})</span>
+        <span className="chart-title">{t("tracker.comparison_vs_average", { rank: rankGroup.toUpperCase() })}</span>
       </div>
 
       <div className="radar-container">
@@ -166,11 +168,11 @@ export default function RankComparisonChart({ benchmarks, rankGroup }) {
       <div className="radar-legend">
         <div className="legend-item">
           <div className="legend-box player" />
-          <span>Tus Estadísticas</span>
+          <span>{t("tracker.your_stats")}</span>
         </div>
         <div className="legend-item">
           <div className="legend-box average" />
-          <span>Promedio del Rango</span>
+          <span>{t("tracker.rank_average")}</span>
         </div>
       </div>
     </div>

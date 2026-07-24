@@ -1,11 +1,13 @@
 import React from "react";
 import { Search } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function Filters({ activeFilter, onFilterChange, searchTerm, onSearchTermChange }) {
+  const { t } = useTranslation();
   const filterOptions = [
-    { key: "all", label: "Todos" },
-    { key: "unlocked", label: "Desbloqueados" },
-    { key: "locked", label: "Bloqueados" },
+    { key: "all", label: t("achievements.filter_all") },
+    { key: "unlocked", label: t("achievements.filter_unlocked") },
+    { key: "locked", label: t("achievements.filter_locked") },
   ];
 
   return (
@@ -26,7 +28,7 @@ export default function Filters({ activeFilter, onFilterChange, searchTerm, onSe
         <Search size={16} className="search-icon" />
         <input
           type="text"
-          placeholder="Buscar logro..."
+          placeholder={t("achievements.search_placeholder")}
           value={searchTerm}
           onChange={(e) => onSearchTermChange(e.target.value)}
         />

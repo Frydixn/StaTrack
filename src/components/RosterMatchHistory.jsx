@@ -1,5 +1,6 @@
 import React from "react";
 import { Clock, Users, Calendar, ShieldAlert } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 /**
  * Componente que muestra la lista de partidas jugadas por el equipo.
@@ -7,6 +8,7 @@ import { Clock, Users, Calendar, ShieldAlert } from "lucide-react";
  * @param {Array} props.history - Partidas calculadas.
  */
 export default function RosterMatchHistory({ history }) {
+  const { t } = useTranslation();
   if (!history || history.length === 0) {
     return (
       <div style={{
@@ -19,7 +21,7 @@ export default function RosterMatchHistory({ history }) {
         fontSize: "13px"
       }}>
         <ShieldAlert size={24} style={{ marginBottom: "8px", color: "var(--red)" }} />
-        <div>No se encontraron partidas con al menos 3 integrantes del roster activo en este rango.</div>
+        <div>{t("roster.no_history")}</div>
       </div>
     );
   }
@@ -32,10 +34,10 @@ export default function RosterMatchHistory({ history }) {
     const hours = Math.floor(mins / 60);
     const days = Math.floor(hours / 24);
 
-    if (days > 0) return `${days}d`;
-    if (hours > 0) return `${hours}h`;
-    if (mins > 0) return `${mins}m`;
-    return "Ahora";
+    if (days > 0) return t("general.time_d_ago", { count: days });
+    if (hours > 0) return t("general.time_h_ago", { count: hours });
+    if (mins > 0) return t("general.time_m_ago", { count: mins });
+    return t("general.now");
   };
 
   return (
@@ -43,7 +45,7 @@ export default function RosterMatchHistory({ history }) {
       <div style={{ display: "flex", alignItems: "center", gap: "8px", borderBottom: "1px solid var(--line)", paddingBottom: "12px" }}>
         <Calendar size={18} color="var(--red)" />
         <h3 className="font-oswald" style={{ color: "white", fontSize: "16px", margin: 0, letterSpacing: "0.5px" }}>
-          Historial de Partidas del Roster
+          {t("roster.title_history")}
         </h3>
       </div>
 
@@ -53,8 +55,12 @@ export default function RosterMatchHistory({ history }) {
         gap: "10px"
       }}>
         {history.map((m) => {
-          const isWin = m.outcome === "Victoria";
-          const outcomeColor = isWin ? "#10b981" : m.outcome === "Derrota" ? "#ff4655" : "var(--text-dim)";
+          const isWin = m.outcome === "Victoria" || m.outcome === "VICTORY" || m.outcome === "Win";
+          const isLoss = m.outcome === "Derrota" || m.outcome === "DEFEAT" || m.outcome === "Loss";
+          const outcomeColor = isWin ? "#10b981" : isLoss ? "#ff4655" : "var(--text-dim)";
+          const outcomeText = isWin
+            ? t("match_history.victory")
+            : (isLoss ? t("match_history.defeat") : t("match_history.draw"));
           const dateStr = new Date(m.gameStart * 1000).toLocaleDateString();
 
           return (
@@ -91,7 +97,7 @@ export default function RosterMatchHistory({ history }) {
                     letterSpacing: "0.5px",
                     textTransform: "uppercase"
                   }}>
-                    {m.outcome}
+                    {outcomeText}
                   </span>
                 </div>
 

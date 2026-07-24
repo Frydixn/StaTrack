@@ -1,11 +1,14 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import AchievementCard from "./AchievementCard";
 
 export default function AchievementsGrid({ achievements, friendAchievements }) {
+  const { t } = useTranslation();
+
   if (achievements.length === 0) {
     return (
       <div className="empty-achievements">
-        No se encontraron logros que coincidan con la búsqueda o el filtro seleccionado.
+        {t("achievements.empty")}
       </div>
     );
   }

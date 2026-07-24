@@ -15,8 +15,10 @@ import { calculateRosterMatches } from "../utils/rosterMatchHistory";
 import axios from "axios";
 import { syncPlayerMatches } from "../services/statsEngine";
 import { UserPlus, ShieldAlert, Award, Sparkles, Trash2, Swords, Compass } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function RosterView({ playerData }) {
+  const { t } = useTranslation();
   const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
   const activePlayer = playerData?.account;
 
@@ -163,7 +165,7 @@ export default function RosterView({ playerData }) {
       }
     } catch (err) {
       console.error(err);
-      setAddError("Fallo al sincronizar partidas de la API de Valorant.");
+      setAddError(t("roster.err_sync"));
     } finally {
       setLoadingAnalysis(false);
     }
@@ -172,7 +174,7 @@ export default function RosterView({ playerData }) {
   const handleAddPlayer = async (e) => {
     if (e) e.preventDefault();
     if (!newPlayerInput.includes("#")) {
-      setAddError("Formato incorrecto. Usa Nombre#TAG");
+      setAddError(t("roster.err_format"));
       return;
     }
     setAddError("");
@@ -186,7 +188,7 @@ export default function RosterView({ playerData }) {
       const accountData = data?.data;
 
       if (!accountData || !accountData.puuid) {
-        throw new Error("No se pudo obtener el PUUID del jugador.");
+        throw new Error(t("roster.err_puuid"));
       }
 
       addPlayer(activeRosterId, {
@@ -197,7 +199,7 @@ export default function RosterView({ playerData }) {
       setNewPlayerInput("");
     } catch (err) {
       console.error(err);
-      setAddError("Jugador no encontrado. Verifica las mayúsculas y el TAG.");
+      setAddError(t("roster.err_not_found"));
     } finally {
       setAdding(false);
     }
@@ -234,7 +236,7 @@ export default function RosterView({ playerData }) {
           }}
         >
           <Compass size={14} />
-          GESTIÓN Y ANÁLISIS DE ROSTER
+          {t("roster.tab_manage")}
         </button>
         <button
           onClick={() => setActiveMode("compare")}
@@ -254,7 +256,7 @@ export default function RosterView({ playerData }) {
           }}
         >
           <Swords size={14} />
-          COMPARAR DOS ROSTERS
+          {t("roster.tab_compare")}
         </button>
       </div>
 
@@ -296,14 +298,15 @@ export default function RosterView({ playerData }) {
                 justifyContent: "center",
                 flex: 1,
                 color: "var(--text-dim)",
-                gap: "12px"
+                gap: "12px",
+                textAlign: "center"
               }}>
                 <ShieldAlert size={48} color="var(--red)" />
                 <h3 className="font-oswald" style={{ color: "white", fontSize: "20px", margin: 0 }}>
-                  Crea o selecciona un Roster
+                  {t("roster.no_rosters")}
                 </h3>
                 <p style={{ fontSize: "13px", margin: 0 }}>
-                  Usa el panel de la izquierda para inicializar tu alineación de equipo.
+                  {t("roster.sidebar_desc")}
                 </p>
               </div>
             ) : (
@@ -323,7 +326,7 @@ export default function RosterView({ playerData }) {
                       {activeRoster.name}
                     </h2>
                     <div style={{ fontSize: "12px", color: "var(--text-dim)", marginTop: "2px" }}>
-                      {activeRoster.players.length} jugadores en el equipo
+                      {activeRoster.players.length} {t("roster.players_suffix")}
                     </div>
                   </div>
 
@@ -332,7 +335,7 @@ export default function RosterView({ playerData }) {
                     <div style={{ display: "flex", gap: "6px" }}>
                       <input
                         type="text"
-                        placeholder="Compañero#TAG"
+                        placeholder={t("roster.placeholder_add")}
                         value={newPlayerInput}
                         onChange={(e) => setNewPlayerInput(e.target.value)}
                         disabled={adding}
@@ -365,7 +368,7 @@ export default function RosterView({ playerData }) {
                         }}
                       >
                         <UserPlus size={14} />
-                        {adding ? "..." : "Añadir"}
+                        {adding ? "..." : t("roster.add_btn")}
                       </button>
                     </div>
                     {addError && <span style={{ color: "var(--red)", fontSize: "10px", textAlign: "right" }}>{addError}</span>}
@@ -375,7 +378,7 @@ export default function RosterView({ playerData }) {
                 {/* Players List Grid */}
                 <div>
                   <h4 className="font-oswald" style={{ color: "white", fontSize: "12px", letterSpacing: "0.5px", marginBottom: "10px" }}>
-                    JUGADORES EN EL ROSTER
+                    {t("roster.title_players")}
                   </h4>
                   <div style={{
                     display: "grid",
@@ -399,11 +402,11 @@ export default function RosterView({ playerData }) {
                           <span className="font-oswald" style={{ color: "white", fontSize: "13px", letterSpacing: "0.5px" }}>
                             {player.riotId}
                             {player.puuid === activePlayer?.puuid && (
-                              <span style={{ fontSize: "9px", color: "var(--red)", marginLeft: "6px" }}>(Tú)</span>
+                              <span style={{ fontSize: "9px", color: "var(--red)", marginLeft: "6px" }}>{t("roster.you_indicator")}</span>
                             )}
                           </span>
                           <span style={{ fontSize: "10px", color: "var(--text-dim)" }}>
-                            {player.puuid === activePlayer?.puuid ? "Líder de búsqueda" : "Invitado"}
+                            {player.puuid === activePlayer?.puuid ? t("roster.leader") : t("roster.guest")}
                           </span>
                         </div>
 
@@ -447,7 +450,7 @@ export default function RosterView({ playerData }) {
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                     <span className="font-oswald" style={{ color: "var(--text-dim)", fontSize: "11px", letterSpacing: "0.5px" }}>
-                      JUGADOR BASE (FOCO DE ANÁLISIS):
+                      {t("roster.anchor_label")}
                     </span>
                     <select
                       value={analysisPuuid}
@@ -467,13 +470,13 @@ export default function RosterView({ playerData }) {
                     >
                       {activeRoster.players.map((p) => (
                         <option key={p.puuid} value={p.puuid}>
-                          {p.riotId} {p.puuid === activePlayer?.puuid ? "(Tú)" : ""}
+                          {p.riotId} {p.puuid === activePlayer?.puuid ? t("roster.you_indicator") : ""}
                         </option>
                       ))}
                     </select>
                     {loadingAnalysis && (
                       <span style={{ fontSize: "11px", color: "var(--red)", fontStyle: "italic" }}>
-                        Cargando historial de partidas...
+                        {t("roster.loading_history")}
                       </span>
                     )}
                     {!loadingAnalysis && analysisMatches.length === 0 && analysisPuuid && (
@@ -493,7 +496,7 @@ export default function RosterView({ playerData }) {
                           textTransform: "uppercase"
                         }}
                       >
-                        Sincronizar Partidas de este Jugador
+                        {t("roster.sync_btn")}
                       </button>
                     )}
                   </div>
@@ -517,7 +520,7 @@ export default function RosterView({ playerData }) {
                       letterSpacing: "0.5px"
                     }}
                   >
-                    Matriz de Sinergia
+                    {t("roster.tab_synergy")}
                   </button>
                   <button
                     onClick={() => setActiveSubTab("agents")}
@@ -533,7 +536,7 @@ export default function RosterView({ playerData }) {
                       letterSpacing: "0.5px"
                     }}
                   >
-                    Agentes por Rol
+                    {t("roster.tab_agents")}
                   </button>
                   <button
                     onClick={() => setActiveSubTab("maps")}
@@ -549,7 +552,7 @@ export default function RosterView({ playerData }) {
                       letterSpacing: "0.5px"
                     }}
                   >
-                    Mapas
+                    {t("roster.tab_maps")}
                   </button>
                   <button
                     onClick={() => setActiveSubTab("history")}
@@ -565,7 +568,7 @@ export default function RosterView({ playerData }) {
                       letterSpacing: "0.5px"
                     }}
                   >
-                    Historial
+                    {t("roster.tab_history")}
                   </button>
                 </div>
 
@@ -588,7 +591,7 @@ export default function RosterView({ playerData }) {
                           borderRadius: "6px"
                         }}>
                           <div className="font-oswald" style={{ fontSize: "11px", color: "white", marginBottom: "8px", letterSpacing: "0.5px" }}>
-                            COMPAÑEROS FRECUENTES RECOMENDADOS
+                            {t("roster.recommended_title")}
                           </div>
                           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                             {synergyPairs

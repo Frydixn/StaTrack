@@ -4,10 +4,12 @@ import {
   RefreshCw, ChevronDown, ChevronUp, Map
 } from "lucide-react";
 import { RANK_BENCHMARKS, getRankGroup } from "../services/trackerEngine";
+import { useTranslation } from "react-i18next";
 
 export default function PlayerProfileBar({
   account, stats, latestAct, matches, onRefresh, refreshing, onGoToTracker
 }) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState("agents");
   const [expanded, setExpanded] = useState(false);
@@ -88,7 +90,7 @@ export default function PlayerProfileBar({
   const getPeakRank = (mmr) => {
     if (!mmr) return null;
     let peakTierId = 0;
-    let peakTierName = "Unranked";
+    let peakTierName = t("profile.unranked");
     let peakSeasonName = "";
 
     const bySeason = mmr.by_season || mmr.seasonal;
@@ -98,7 +100,7 @@ export default function PlayerProfileBar({
         const tierId = data.final_rank || 0;
         if (tierId > peakTierId) {
           peakTierId = tierId;
-          peakTierName = data.final_rank_patched || "Unranked";
+          peakTierName = data.final_rank_patched || t("profile.unranked");
           peakSeasonName = seasonKey.toUpperCase();
         }
       });
@@ -107,7 +109,7 @@ export default function PlayerProfileBar({
         const tierId = item.end_tier || item.end_tier_id || 0;
         if (tierId > peakTierId) {
           peakTierId = tierId;
-          peakTierName = item.end_tier_name || item.end_tier_patched || "Unranked";
+          peakTierName = item.end_tier_name || item.end_tier_patched || t("profile.unranked");
           peakSeasonName = item.season_short || item.season?.short || "";
         }
       });
@@ -115,14 +117,14 @@ export default function PlayerProfileBar({
 
     if (peakTierId === 0 && mmr.highest_rank) {
       peakTierId = mmr.highest_rank.tier || 0;
-      peakTierName = mmr.highest_rank.patched_tier || "Unranked";
+      peakTierName = mmr.highest_rank.patched_tier || t("profile.unranked");
       peakSeasonName = mmr.highest_rank.season?.toUpperCase() || "";
     }
 
     return peakTierId > 0 ? { tierId: peakTierId, name: peakTierName, season: peakSeasonName } : null;
   };
 
-  const currentRankName = stats.mmr?.current_data?.currenttierpatched || stats.rankTier || "Unranked";
+  const currentRankName = stats.mmr?.current_data?.currenttierpatched || stats.rankTier || t("profile.unranked");
   const currentRankTier = stats.mmr?.current_data?.currenttier || getTierIdFromName(currentRankName);
   const currentRankIcon = stats.mmr?.current_data?.images?.large || getRankIconUrl(currentRankTier);
   const currentRR = stats.mmr?.current_data?.ranking_in_tier ?? stats.actStats?.rr ?? 0;
@@ -134,7 +136,7 @@ export default function PlayerProfileBar({
   const rrChangeClass = mmrChange > 0 ? "text-win font-oswald" : mmrChange < 0 ? "text-loss font-oswald" : "font-oswald";
 
   const peakRank = getPeakRank(stats.mmr);
-  const peakRankName = peakRank ? peakRank.name : stats.actStats?.peakRankName || "Unranked";
+  const peakRankName = peakRank ? peakRank.name : stats.actStats?.peakRankName || t("profile.unranked");
   const peakRankSeason = peakRank ? peakRank.season : "—";
   const peakRankTier = peakRank ? peakRank.tierId : getTierIdFromName(stats.actStats?.peakRankName);
   const peakRankIcon = getRankIconUrl(peakRankTier);
@@ -331,7 +333,7 @@ export default function PlayerProfileBar({
           <div className="ppb-section ppb-identity">
             <div className="ppb-section-title">
               <User size={12} className="ppb-section-icon" />
-              <span>PLAYER IDENTITY</span>
+              <span>{t("profile.identity")}</span>
             </div>
 
             <div className="ppb-identity-card-row">
@@ -353,16 +355,16 @@ export default function PlayerProfileBar({
                     onClick={onRefresh}
                     className="ppb-refresh-btn"
                     disabled={refreshing}
-                    title="Actualizar estadísticas"
+                    title={t("profile.tooltip_refresh")}
                   >
                     <RefreshCw size={12} className={refreshing ? "spin-animation" : ""} />
                   </button>
                 </div>
                 <div className="ppb-lvl-region">
-                  LVL {account.account_level || stats.accountLevel || "—"} | {account.region?.toUpperCase() || "—"}
+                  {t("profile.level", { level: account.account_level || stats.accountLevel || "—" })} | {t("profile.region", { region: account.region?.toUpperCase() || "—" })}
                 </div>
                 {account.puuid && (
-                  <div className="ppb-puuid-wrap" onClick={handleCopyPuuid} title="Copiar PUUID completo">
+                  <div className="ppb-puuid-wrap" onClick={handleCopyPuuid} title={t("profile.tooltip_copy")}>
                     <span className="puuid-text">PUUID: {puuidTruncated}</span>
                     {copied ? <Check size={11} className="text-win" /> : <Copy size={11} className="copy-icon" />}
                   </div>
@@ -375,12 +377,12 @@ export default function PlayerProfileBar({
           <div className="ppb-section ppb-rank">
             <div className="ppb-section-title">
               <Shield size={12} className="ppb-section-icon" />
-              <span>RANK STATUS</span>
+              <span>{t("profile.rank_status")}</span>
             </div>
 
             <div className="ppb-rank-cols">
               <div className="rank-col">
-                <span className="rank-col-lbl">CURRENT</span>
+                <span className="rank-col-lbl">{t("profile.current")}</span>
                 <div className="rank-details">
                   <div className="rank-icon-wrap">
                     {currentRankIcon ? (
@@ -394,13 +396,13 @@ export default function PlayerProfileBar({
                     <span className="rank-rr">
                       {currentRR} RR <span className={rrChangeClass}>{rrChangeText}</span>
                     </span>
-                    <span className="rank-elo">ELO {currentELO}</span>
+                    <span className="rank-elo">{t("profile.elo", { elo: currentELO })}</span>
                   </div>
                 </div>
               </div>
 
               <div className="rank-col line-separator">
-                <span className="rank-col-lbl">PEAK</span>
+                <span className="rank-col-lbl">{t("profile.peak")}</span>
                 <div className="rank-details">
                   <div className="rank-icon-wrap">
                     {peakRankIcon ? (
@@ -424,12 +426,12 @@ export default function PlayerProfileBar({
           <div className="ppb-section-title" style={{ display: "flex", justifyContent: "space-between", width: "100%", alignItems: "center" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
               <Activity size={12} className="ppb-section-icon" />
-              <span>PERFORMANCE OVERVIEW</span>
+              <span>{t("profile.performance_overview")}</span>
             </div>
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
               <span className="ppb-act-badge">{currentActTag}</span>
               <button className="ppb-details-btn font-oswald" onClick={onGoToTracker}>
-                DETAILS
+                {t("profile.details_btn")}
               </button>
             </div>
           </div>
@@ -459,17 +461,17 @@ export default function PlayerProfileBar({
             </div>
             <div className="perf-cell">
               <span className="val font-oswald text-cyan">{stats.mvps}</span>
-              <span className="lbl">PARTIDAS MVP</span>
+              <span className="lbl">{t("general.mvps")}</span>
             </div>
             <div className="perf-cell">
               <span className="val font-oswald text-gold">{stats.aces}</span>
-              <span className="lbl">ACES</span>
+              <span className="lbl">{t("general.aces")}</span>
             </div>
             <div className="perf-cell">
               <span className="val font-oswald">
                 <span className="text-win">{stats.totalWins}W</span> - <span className="text-loss">{numMatches - stats.totalWins}L</span>
               </span>
-              <span className="lbl">RÉCORD GENERAL</span>
+              <span className="lbl">{t("general.overall_record")}</span>
             </div>
           </div>
         </div>
@@ -482,7 +484,7 @@ export default function PlayerProfileBar({
             <Map size={12} className="ppb-section-icon" />
             <span>STATS</span>
           </div>
-          <span className="ppb-games-count font-oswald">{numMatches} GAMES</span>
+          <span className="ppb-games-count font-oswald">{t("general.matches", { count: numMatches }).toUpperCase()}</span>
         </div>
 
         <div className="ppb-agents-tab-nav">
@@ -490,32 +492,32 @@ export default function PlayerProfileBar({
             className={`tab-link font-oswald ${activeTab === "agents" ? "active" : ""}`}
             onClick={() => { setActiveTab("agents"); setExpanded(false); }}
           >
-            AGENTS
+            {t("profile.agents_tab")}
           </button>
           <button
             className={`tab-link font-oswald ${activeTab === "roles" ? "active" : ""}`}
             onClick={() => { setActiveTab("roles"); setExpanded(false); }}
           >
-            ROLES
+            {t("profile.roles_tab")}
           </button>
           <button
             className={`tab-link font-oswald ${activeTab === "maps" ? "active" : ""}`}
             onClick={() => { setActiveTab("maps"); setExpanded(false); }}
           >
-            MAPS
+            {t("profile.maps_tab")}
           </button>
         </div>
 
         {!hasEnoughData ? (
           <div className="ppb-empty-tab">
-            <span className="text-dim font-oswald" style={{ fontSize: 12 }}>DATOS INSUFICIENTES</span>
+            <span className="text-dim font-oswald" style={{ fontSize: 12 }}>{t("profile.insufficient_data")}</span>
           </div>
         ) : (
           <div className="ppb-table-scroll-container">
             <table className="ppb-table">
               <thead>
                 <tr>
-                  <th>{activeTab === "agents" ? "AGENT" : activeTab === "roles" ? "ROLE" : "MAP"}</th>
+                  <th>{activeTab === "agents" ? t("profile.table_agent") : activeTab === "roles" ? t("profile.table_role") : t("profile.table_map")}</th>
                   <th style={{ textAlign: "right" }}>WIN%</th>
                   <th style={{ textAlign: "right" }}>K/D</th>
                   <th style={{ textAlign: "right" }}>ADR</th>
@@ -566,9 +568,9 @@ export default function PlayerProfileBar({
                 onClick={() => setExpanded(!expanded)}
               >
                 {expanded ? (
-                  <>COLAPSAR LISTA <ChevronUp size={11} /></>
+                  <>{t("profile.collapse")} <ChevronUp size={11} /></>
                 ) : (
-                  <>VER LISTA COMPLETA <ChevronDown size={11} /></>
+                  <>{t("profile.see_all")} <ChevronDown size={11} /></>
                 )}
               </div>
             )}

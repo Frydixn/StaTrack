@@ -1,6 +1,8 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export default function Header({ onSearch, loading }) {
+  const { t } = useTranslation();
   const [inputValue, setInputValue] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -8,12 +10,12 @@ export default function Header({ onSearch, loading }) {
     e.preventDefault();
     const raw = inputValue.trim();
     if (!raw.includes("#")) {
-      setErrorMsg("Formato inválido. Usá Nombre#TAG, ej: Sentinel#000");
+      setErrorMsg(t("header.error_format"));
       return;
     }
     const [name, tag] = raw.split("#");
     if (!name || !tag) {
-      setErrorMsg("Formato inválido. Ambos nombre y tag son obligatorios.");
+      setErrorMsg(t("header.error_format"));
       return;
     }
     setErrorMsg("");
@@ -25,7 +27,7 @@ export default function Header({ onSearch, loading }) {
       <form onSubmit={handleSubmit} className="topbar-search">
         <input
           type="text"
-          placeholder="Nombre#TAG (ej: Sentinel#000)"
+          placeholder={t("header.placeholder")}
           value={inputValue}
           onChange={(e) => {
             setInputValue(e.target.value);
@@ -34,7 +36,7 @@ export default function Header({ onSearch, loading }) {
           disabled={loading}
         />
         <button type="submit" disabled={loading || !inputValue.trim()}>
-          {loading ? "..." : "Buscar"}
+          {loading ? t("header.loading") : t("header.search_btn")}
         </button>
       </form>
       

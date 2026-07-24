@@ -1,5 +1,6 @@
 import React from "react";
 import { Map, AlertTriangle, Shield, Sword } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 /**
  * Pestaña de Mapas que muestra el balance de winrate en ataque y defensa.
@@ -7,6 +8,7 @@ import { Map, AlertTriangle, Shield, Sword } from "lucide-react";
  * @param {Array} props.mapStats - Estadísticas de mapas calculadas.
  */
 export default function MapasTab({ mapStats }) {
+  const { t } = useTranslation();
   if (!mapStats || mapStats.length === 0) {
     return (
       <div style={{
@@ -18,7 +20,7 @@ export default function MapasTab({ mapStats }) {
         color: "var(--text-dim)",
         fontSize: "13px"
       }}>
-        No hay datos de mapas disponibles para este filtro.
+        {t("roster.maps_no_data")}
       </div>
     );
   }
@@ -28,7 +30,7 @@ export default function MapasTab({ mapStats }) {
       <div style={{ display: "flex", alignItems: "center", gap: "8px", borderBottom: "1px solid var(--line)", paddingBottom: "12px" }}>
         <Map size={18} color="var(--red)" />
         <h3 className="font-oswald" style={{ color: "white", fontSize: "16px", margin: 0, letterSpacing: "0.5px" }}>
-          Rendimiento y Balance por Mapa
+          {t("roster.maps_title")}
         </h3>
       </div>
 
@@ -62,7 +64,7 @@ export default function MapasTab({ mapStats }) {
                     {item.map}
                   </h4>
                   <span style={{ fontSize: "11px", color: "var(--text-dim)" }}>
-                    {item.games} {item.games === 1 ? "partida" : "partidas"}
+                    {item.games} {item.games === 1 ? t("roster.games_one") : t("roster.games_multiple")}
                   </span>
                 </div>
 
@@ -81,7 +83,7 @@ export default function MapasTab({ mapStats }) {
                     textTransform: "uppercase"
                   }}>
                     <AlertTriangle size={10} />
-                    Desbalance ({item.diff}%)
+                    {t("roster.imbalance")} ({item.diff}%)
                   </span>
                 )}
               </div>
@@ -92,7 +94,7 @@ export default function MapasTab({ mapStats }) {
                 <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px" }}>
                     <span style={{ color: "var(--text-dim)", display: "flex", alignItems: "center", gap: "4px" }}>
-                      <Sword size={10} /> ATACANTE
+                      <Sword size={10} /> {t("roster.attacker")}
                     </span>
                     <span style={{ fontWeight: "bold", color: "white" }}>
                       {item.attackWR}% <span style={{ fontSize: "9px", color: "var(--text-dim)", fontWeight: "normal" }}>({item.attackWins}/{item.attackPlayed})</span>
@@ -112,7 +114,7 @@ export default function MapasTab({ mapStats }) {
                 <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px" }}>
                     <span style={{ color: "var(--text-dim)", display: "flex", alignItems: "center", gap: "4px" }}>
-                      <Shield size={10} /> DEFENSOR
+                      <Shield size={10} /> {t("roster.defender")}
                     </span>
                     <span style={{ fontWeight: "bold", color: "white" }}>
                       {item.defenseWR}% <span style={{ fontSize: "9px", color: "var(--text-dim)", fontWeight: "normal" }}>({item.defenseWins}/{item.defensePlayed})</span>

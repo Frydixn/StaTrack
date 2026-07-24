@@ -1,10 +1,12 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export default function ActTrendChart({ trendData }) {
+  const { t } = useTranslation();
   const [metric, setMetric] = useState("kd"); // "kd" | "hs" | "winrate"
 
   if (!trendData || trendData.length === 0) {
-    return <div className="chart-empty">No hay suficientes datos de partidas recientes para mostrar la tendencia.</div>;
+    return <div className="chart-empty">{t("tracker.insufficient_trend_data")}</div>;
   }
 
   const values = trendData.map((d) => d[metric]);
@@ -41,7 +43,7 @@ export default function ActTrendChart({ trendData }) {
   return (
     <div className="trend-chart-card">
       <div className="chart-header">
-        <span className="chart-title">TENDENCIA RECIENTE (ÚLTIMAS 15 PARTIDAS)</span>
+        <span className="chart-title">{t("tracker.recent_trend_title")}</span>
         <div className="chart-selectors">
           <button className={`chart-sel-btn ${metric === "kd" ? "active" : ""}`} onClick={() => setMetric("kd")}>
             K/D

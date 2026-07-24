@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { Plus, Trash2, Folder, Calendar } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function RosterSidebar({ rosters, activeRosterId, onSelect, onCreate, onDelete }) {
+  const { t } = useTranslation();
   const [newRosterName, setNewRosterName] = useState("");
 
   const handleSubmit = (e) => {
@@ -23,12 +25,12 @@ export default function RosterSidebar({ rosters, activeRosterId, onSelect, onCre
     }}>
       <div>
         <h4 className="font-oswald" style={{ color: "white", fontSize: "14px", margin: "0 0 12px 0", letterSpacing: "0.5px" }}>
-          MIS ROSTERS
+          {t("roster.title_mis_rosters")}
         </h4>
         <form onSubmit={handleSubmit} style={{ display: "flex", gap: "6px" }}>
           <input
             type="text"
-            placeholder="Nombre de Roster..."
+            placeholder={t("roster.placeholder_name")}
             value={newRosterName}
             onChange={(e) => setNewRosterName(e.target.value)}
             style={{
@@ -67,7 +69,7 @@ export default function RosterSidebar({ rosters, activeRosterId, onSelect, onCre
       <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px" }}>
         {rosters.length === 0 ? (
           <div style={{ fontSize: "11px", color: "var(--text-dim)", textAlign: "center", padding: "20px 0" }}>
-            No tienes rosters creados.
+            {t("roster.no_rosters_created")}
           </div>
         ) : (
           rosters.map((roster) => {
@@ -101,7 +103,7 @@ export default function RosterSidebar({ rosters, activeRosterId, onSelect, onCre
                       {roster.name}
                     </div>
                     <div style={{ fontSize: "9px", color: "var(--text-dim)" }}>
-                      {roster.players?.length || 0} jugadores · {dateStr}
+                      {t("roster.players_count", { count: roster.players?.length || 0 })} · {dateStr}
                     </div>
                   </div>
                 </div>

@@ -6,8 +6,10 @@ import DateRangeSelector from "./DateRangeSelector";
 import { Swords, Users, Map, Award, ShieldAlert } from "lucide-react";
 import MapasTab from "./MapasTab";
 import AgentRoleBreakdown from "./AgentRoleBreakdown";
+import { useTranslation } from "react-i18next";
 
 export default function RosterComparison({ rosters, matches, activePuuid }) {
+  const { t } = useTranslation();
   const [rosterAId, setRosterAId] = useState("");
   const [rosterBId, setRosterBId] = useState("");
   const [dateRange, setDateRange] = useState("all");
@@ -52,7 +54,7 @@ export default function RosterComparison({ rosters, matches, activePuuid }) {
     if (!roster) {
       return (
         <div style={{ padding: "20px", textAlign: "center", color: "var(--text-dim)" }}>
-          Roster no seleccionado.
+          {t("roster.not_selected")}
         </div>
       );
     }
@@ -67,7 +69,7 @@ export default function RosterComparison({ rosters, matches, activePuuid }) {
           padding: "12px 16px"
         }}>
           <h4 className="font-oswald" style={{ color: "white", fontSize: "12px", letterSpacing: "0.5px", marginBottom: "8px" }}>
-            JUGADORES ({roster.players?.length || 0})
+            {t("roster.title_players").toUpperCase()} ({roster.players?.length || 0})
           </h4>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
             {roster.players?.map(p => (
@@ -90,13 +92,13 @@ export default function RosterComparison({ rosters, matches, activePuuid }) {
           <div style={{ display: "flex", alignItems: "center", gap: "8px", borderBottom: "1px solid var(--line)", paddingBottom: "12px", marginBottom: "12px" }}>
             <Users size={18} color="var(--red)" />
             <h3 className="font-oswald" style={{ color: "white", fontSize: "16px", margin: 0, letterSpacing: "0.5px" }}>
-              Sinergia de Parejas (Dúos)
+              {t("roster.duos_title")}
             </h3>
           </div>
           
           {!stats?.pairsSynergy || stats.pairsSynergy.length === 0 ? (
             <div style={{ fontSize: "11px", color: "var(--text-dim)", padding: "10px 0", fontStyle: "italic" }}>
-              No se encontraron dúos jugando juntos en el historial.
+              {t("roster.no_duos")}
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "250px", overflowY: "auto", paddingRight: "4px" }}>
@@ -125,7 +127,7 @@ export default function RosterComparison({ rosters, matches, activePuuid }) {
                         {pair.p1RiotId.split("#")[0]} + {pair.p2RiotId.split("#")[0]}
                       </span>
                       <span style={{ fontSize: "10px", color: "var(--text-dim)" }}>
-                        {pair.games} {pair.games === 1 ? "partida" : "partidas"}
+                        {pair.games} {pair.games === 1 ? t("roster.games_one") : t("roster.games_multiple")}
                       </span>
                     </div>
 
@@ -159,7 +161,7 @@ export default function RosterComparison({ rosters, matches, activePuuid }) {
           <div style={{ display: "flex", alignItems: "center", gap: "8px", borderBottom: "1px solid var(--line)", paddingBottom: "12px", marginBottom: "12px" }}>
             <Award size={18} color="var(--red)" />
             <h3 className="font-oswald" style={{ color: "white", fontSize: "16px", margin: 0, letterSpacing: "0.5px" }}>
-              Desglose de Agentes por Rol
+              {t("roster.compare_agents_title")}
             </h3>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -193,7 +195,7 @@ export default function RosterComparison({ rosters, matches, activePuuid }) {
         <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
           {/* Select Roster A */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span className="font-oswald" style={{ color: "var(--text-dim)", fontSize: "11px" }}>ROSTER A:</span>
+            <span className="font-oswald" style={{ color: "var(--text-dim)", fontSize: "11px" }}>{t("roster.label_roster_a")}</span>
             <select
               value={rosterAId}
               onChange={(e) => setRosterAId(e.target.value)}
@@ -216,11 +218,11 @@ export default function RosterComparison({ rosters, matches, activePuuid }) {
             </select>
           </div>
 
-          <span className="font-oswald" style={{ color: "var(--red)", fontSize: "14px" }}>VS</span>
+          <span className="font-oswald" style={{ color: "var(--red)", fontSize: "14px" }}>{t("roster.label_vs")}</span>
 
           {/* Select Roster B */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span className="font-oswald" style={{ color: "var(--text-dim)", fontSize: "11px" }}>ROSTER B:</span>
+            <span className="font-oswald" style={{ color: "var(--text-dim)", fontSize: "11px" }}>{t("roster.label_roster_b")}</span>
             <select
               value={rosterBId}
               onChange={(e) => setRosterBId(e.target.value)}
@@ -261,7 +263,7 @@ export default function RosterComparison({ rosters, matches, activePuuid }) {
           fontSize: "13px"
         }}>
           <ShieldAlert size={16} />
-          Crea al menos 2 rosters en el panel de administración para poder compararlos lado a lado.
+          {t("roster.compare_min_rosters")}
         </div>
       )}
 
@@ -281,7 +283,7 @@ export default function RosterComparison({ rosters, matches, activePuuid }) {
             marginBottom: "16px",
             textTransform: "uppercase"
           }}>
-            {rosterA?.name || "Roster A"}
+            {rosterA?.name || t("roster.label_roster_a")}
           </h3>
           {renderRosterColumn(rosterA, statsA)}
         </div>
@@ -296,7 +298,7 @@ export default function RosterComparison({ rosters, matches, activePuuid }) {
             marginBottom: "16px",
             textTransform: "uppercase"
           }}>
-            {rosterB?.name || "Roster B"}
+            {rosterB?.name || t("roster.label_roster_b")}
           </h3>
           {renderRosterColumn(rosterB, statsB)}
         </div>

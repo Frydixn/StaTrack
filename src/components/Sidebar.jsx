@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { BarChart2, Award, Users, Crosshair, Map, Swords, Search, Clock, Star } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import LanguageSelector from "./LanguageSelector";
 
 export default function Sidebar({ activeTab, setActiveTab, playerData, onSearch, loading }) {
+  const { t } = useTranslation();
   const [inputValue, setInputValue] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -124,27 +127,30 @@ export default function Sidebar({ activeTab, setActiveTab, playerData, onSearch,
   };
 
   const navItems = [
-    { id: "tracker", label: "Tracker", icon: BarChart2, desc: "Análisis y mejora", disabled: !playerData, tooltip: !playerData ? "Buscá un Riot ID primero" : undefined },
-    { id: "achievements", label: "Logros", icon: Award, desc: "Trayectoria completa", disabled: !playerData, tooltip: !playerData ? "Buscá un Riot ID primero" : undefined },
-    { id: "roster", label: "Roster", icon: Users, desc: "Sinergia de equipos", disabled: !playerData, tooltip: !playerData ? "Buscá un Riot ID primero" : undefined },
-    { id: "compare", label: "Comparar", icon: Swords, desc: "vs amigos y pros", disabled: false, tooltip: undefined },
-    { id: "maps", label: "Mapas", icon: Map, desc: "Rotación y detalles", disabled: false, tooltip: undefined },
+    { id: "tracker", label: t("sidebar.tracker"), icon: BarChart2, desc: t("sidebar.tracker_desc"), disabled: !playerData, tooltip: !playerData ? t("sidebar.no_profile") : undefined },
+    { id: "achievements", label: t("sidebar.achievements"), icon: Award, desc: t("sidebar.achievements_desc"), disabled: !playerData, tooltip: !playerData ? t("sidebar.no_profile") : undefined },
+    { id: "roster", label: t("sidebar.roster"), icon: Users, desc: t("sidebar.roster_desc"), disabled: !playerData, tooltip: !playerData ? t("sidebar.no_profile") : undefined },
+    { id: "compare", label: t("sidebar.compare"), icon: Swords, desc: t("sidebar.compare_desc"), disabled: false, tooltip: undefined },
+    { id: "maps", label: t("sidebar.maps"), icon: Map, desc: t("sidebar.maps_desc"), disabled: false, tooltip: undefined },
   ];
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-brand">
-        <Crosshair className="sidebar-brand-icon" size={20} />
-        <span className="sidebar-brand-text">
-          Track<span className="brand-red">Trics  </span>
-        </span>
+      <div className="sidebar-brand" style={{ display: "flex", flexDirection: "column", gap: "10px", alignItems: "flex-start" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <Crosshair className="sidebar-brand-icon" size={20} />
+          <span className="sidebar-brand-text">
+            Track<span className="brand-red">Trics  </span>
+          </span>
+        </div>
+        <LanguageSelector />
       </div>
 
       <div className="sidebar-search-container" style={{ padding: "0 16px 16px 16px", borderBottom: "1px solid var(--line)", position: "relative" }}>
         <form onSubmit={handleSubmit} style={{ display: "flex", gap: "6px" }}>
           <input
             type="text"
-            placeholder="Nombre#TAG"
+            placeholder={t("sidebar.search_placeholder")}
             value={inputValue}
             onFocus={() => setIsDropdownOpen(true)}
             onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
@@ -207,13 +213,13 @@ export default function Sidebar({ activeTab, setActiveTab, playerData, onSearch,
           >
             <div style={{ display: "flex", borderBottom: "1px solid var(--line)", background: "rgba(0,0,0,0.3)", padding: "4px", gap: "2px" }}>
               {[
-                { id: "results", label: "RESULTADOS", icon: Search },
-                { id: "recent", label: "RECIENTES", icon: Clock },
-                { id: "favorites", label: "FAVORITOS", icon: Star }
-              ].map((t) => (
+                { id: "results", label: t("sidebar.results"), icon: Search },
+                { id: "recent", label: t("sidebar.recent"), icon: Clock },
+                { id: "favorites", label: t("sidebar.favorites"), icon: Star }
+              ].map((tabItem) => (
                 <button
-                  key={t.id}
-                  onClick={() => setDropdownTab(t.id)}
+                  key={tabItem.id}
+                  onClick={() => setDropdownTab(tabItem.id)}
                   className="font-oswald"
                   style={{
                     flex: 1,
@@ -222,17 +228,17 @@ export default function Sidebar({ activeTab, setActiveTab, playerData, onSearch,
                     justifyContent: "center",
                     gap: "4px",
                     padding: "6px 2px",
-                    background: dropdownTab === t.id ? "rgba(255, 70, 85, 0.15)" : "transparent",
+                    background: dropdownTab === tabItem.id ? "rgba(255, 70, 85, 0.15)" : "transparent",
                     border: "none",
                     borderRadius: "2px",
-                    color: dropdownTab === t.id ? "var(--red)" : "var(--text-dim)",
+                    color: dropdownTab === tabItem.id ? "var(--red)" : "var(--text-dim)",
                     cursor: "pointer",
                     fontSize: "9px",
                     letterSpacing: "0.5px"
                   }}
                 >
-                  <t.icon size={10} />
-                  {t.label}
+                  <tabItem.icon size={10} />
+                  {tabItem.label}
                 </button>
               ))}
             </div>
@@ -240,9 +246,9 @@ export default function Sidebar({ activeTab, setActiveTab, playerData, onSearch,
             <div style={{ flex: 1, padding: "8px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "4px" }}>
               {dropdownTab === "results" && (
                 <>
-                  <div className="font-oswald" style={{ fontSize: "8px", color: "var(--text-dim)", marginBottom: "4px", letterSpacing: "0.5px" }}>JUGADORES COINCIDENTES</div>
+                  <div className="font-oswald" style={{ fontSize: "8px", color: "var(--text-dim)", marginBottom: "4px", letterSpacing: "0.5px" }}>{t("sidebar.matching_players")}</div>
                   {suggestions.length === 0 ? (
-                    <div style={{ fontSize: "10px", color: "var(--text-dim)", padding: "15px 0", textAlign: "center" }}>Escribe para sugerir jugadores...</div>
+                    <div style={{ fontSize: "10px", color: "var(--text-dim)", padding: "15px 0", textAlign: "center" }}>{t("sidebar.type_to_suggest")}</div>
                   ) : (
                     suggestions.map((p) => renderPlayerRow(p))
                   )}
@@ -250,9 +256,9 @@ export default function Sidebar({ activeTab, setActiveTab, playerData, onSearch,
               )}
               {dropdownTab === "recent" && (
                 <>
-                  <div className="font-oswald" style={{ fontSize: "8px", color: "var(--text-dim)", marginBottom: "4px", letterSpacing: "0.5px" }}>BÚSQUEDAS RECIENTES</div>
+                  <div className="font-oswald" style={{ fontSize: "8px", color: "var(--text-dim)", marginBottom: "4px", letterSpacing: "0.5px" }}>{t("sidebar.recent_searches")}</div>
                   {recentPlayers.length === 0 ? (
-                    <div style={{ fontSize: "10px", color: "var(--text-dim)", padding: "15px 0", textAlign: "center" }}>Sin búsquedas recientes.</div>
+                    <div style={{ fontSize: "10px", color: "var(--text-dim)", padding: "15px 0", textAlign: "center" }}>{t("sidebar.no_recent")}</div>
                   ) : (
                     recentPlayers.map((p) => renderPlayerRow(p))
                   )}
@@ -260,9 +266,9 @@ export default function Sidebar({ activeTab, setActiveTab, playerData, onSearch,
               )}
               {dropdownTab === "favorites" && (
                 <>
-                  <div className="font-oswald" style={{ fontSize: "8px", color: "var(--text-dim)", marginBottom: "4px", letterSpacing: "0.5px" }}>MIS FAVORITOS</div>
+                  <div className="font-oswald" style={{ fontSize: "8px", color: "var(--text-dim)", marginBottom: "4px", letterSpacing: "0.5px" }}>{t("sidebar.my_favorites")}</div>
                   {favorites.length === 0 ? (
-                    <div style={{ fontSize: "10px", color: "var(--text-dim)", padding: "15px 0", textAlign: "center" }}>No has agregado favoritos.</div>
+                    <div style={{ fontSize: "10px", color: "var(--text-dim)", padding: "15px 0", textAlign: "center" }}>{t("sidebar.no_favorites_added")}</div>
                   ) : (
                     favorites.map((p) => renderPlayerRow(p))
                   )}
@@ -303,12 +309,12 @@ export default function Sidebar({ activeTab, setActiveTab, playerData, onSearch,
               <span className="mini-profile-tag">#{playerData.account?.tag}</span>
             </div>
             <div className="mini-profile-rank">
-              {playerData.stats?.rankTier || "Unranked"}
+              {playerData.stats?.rankTier || t("general.rank_unranked")}
             </div>
           </div>
           <div className="mini-profile-progress">
             <div className="mini-profile-progress-label">
-              <span>Logros</span>
+              <span>{t("sidebar.achievements")}</span>
               <span>{playerData.summary?.percent || 0}%</span>
             </div>
             <div className="sidebar-mini-bar-bg">
